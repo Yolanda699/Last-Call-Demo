@@ -150,6 +150,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 @media (max-width:980px){.game{grid-template-columns:minmax(0,1fr)}.hero{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:620px){.seats{grid-template-columns:repeat(2,minmax(0,1fr))}.rulesgrid{grid-template-columns:minmax(0,1fr)}.stat b{font-size:18px}.brand small{display:none}}
 </style>
+<style>#relayNote{position:fixed;left:8px;bottom:6px;font:11px/1.3 system-ui,sans-serif;opacity:.65;z-index:50;pointer-events:none;color:inherit}</style>
 </head>
 <body>
 
@@ -457,21 +458,27 @@ function boot() {
 }
 function needName() { const n = myName(); if (!n) { status('Type your name first.', true); $('myName').focus(); return null; } save('lc_name', n); return n; }
 
+const VERSION = 'v3 · dual relay';
+let clients = [], subs = [], readyFired = false, lastRev = -1;
+function anyConnected() { return clients.some(c => c.connected); }
+function relayInfo() { const n = clients.filter(c => c.connected).length; const g = $('relayNote'); if (g) g.textContent = `${VERSION} · relays connected: ${n}/${BROKERS.length}`; }
+setInterval(relayInfo, 2000);
 function connect(onReady) {
-  try { client && client.end(true); } catch (e) {}
-  const url = BROKERS[brokerIdx % BROKERS.length];
-  client = mqtt.connect(url, { clientId: 'lc_' + uid + '_' + Math.random().toString(36).slice(2, 6), connectTimeout: 8000, reconnectPeriod: 2000, keepalive: 20, clean: true });
-  let first = true;
-  client.on('connect', () => { if (first) { first = false; onReady(); } else resubscribe(); });
-  client.on('error', () => {});
-  client.on('offline', () => { if (code) status('Connection dropped. Reconnecting…', true); });
-  client.on('reconnect', () => { if (first && client.__tries++ > 2) { brokerIdx++; connect(onReady); } });
-  client.__tries = 0;
-  client.on('message', onMessage);
+  clients.forEach(c => { try { c.end(true); } catch (e) {} });
+  clients = []; subs = []; readyFired = false; lastRev = -1;
+  BROKERS.forEach((url, i) => {
+    const c = mqtt.connect(url, { clientId: 'lc_' + uid + '_' + i + Math.random().toString(36).slice(2, 6), connectTimeout: 10000, reconnectPeriod: 2000, keepalive: 20, clean: true });
+    c.on('connect', () => { subs.forEach(t => c.subscribe(t, { qos: 1 })); relayInfo();
+      if (!readyFired) { readyFired = true; onReady(); } else { if (code && !isHost) hello(); if (isHost) publishState(); }
+      const g = $('netNote'); if (g && g.textContent.startsWith('Connection dropped')) g.hidden = true; });
+    c.on('error', () => {});
+    c.on('offline', () => { relayInfo(); if (code && !anyConnected()) status('Connection dropped. Reconnecting…', true); });
+    c.on('message', onMessage);
+    clients.push(c);
+  });
+  client = { get connected() { return anyConnected(); }, publish: (t, m, o) => clients.forEach(c => { if (c.connected) c.publish(t, m, o || {}); }), end: f => clients.forEach(c => { try { c.end(f); } catch (e) {} }) };
 }
-let subs = [];
-function sub(t) { subs.push(t); client.subscribe(t, { qos: 1 }); }
-function resubscribe() { subs.forEach(t => client.subscribe(t, { qos: 1 })); if (code && !isHost) hello(); if (isHost) publishState(); const g = $('netNote'); if (g) g.hidden = true; }
+function sub(t) { if (!subs.includes(t)) subs.push(t); clients.forEach(c => { if (c.connected) c.subscribe(t, { qos: 1 }); }); }
 
 $('btnCreate').onclick = () => { if (!needName()) return; hostTable(newCode(), null); };
 $('btnJoin').onclick = () => { if (!needName()) return; const c = $('joinCode').value.trim().toUpperCase(); if (c.length !== 4) return status('Table codes have 4 letters.', true);
@@ -480,7 +487,7 @@ $('btnJoin').onclick = () => { if (!needName()) return; const c = $('joinCode').
 $('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
 $('btnLeave').onclick = () => { if (!isHost) for (const r of ROLES) if (seats[r] === uid) request({ type: 'seat', role: r, take: false }); setTimeout(leave, 300); };
 
-function leave() { clearInterval(hbTimer); clearTimeout(joinTimer); try { client && client.end(true); } catch (e) {} client = null; subs = []; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
+function leave() { clearInterval(hbTimer); clearInterval(joinTimer); try { client && client.end(true); } catch (e) {} client = null; clients = []; subs = []; lastRev = -1; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
 function enterTable(c) { code = c; save('lc_code', c); $('joinRow').hidden = true; $('tableBox').hidden = false; $('tCode').textContent = c; $('hostNote').hidden = !isHost; }
 function setFrom(st) { state = st.main; seats = Object.assign({}, st.seats); plans = st.plans || {}; names = st.names || {}; render(); }
 
@@ -488,7 +495,7 @@ function onMessage(topic, buf) {
   let m; try { m = JSON.parse(buf.toString()); } catch (e) { return; }
   if (!code) return; const t = T(code);
   if (isHost && topic === t.act) { if (m && m.from && hostApply(m, m.from)) publishState(); return; }
-  if (!isHost && topic === t.state) { if (m && m.main) { lastSeen = Date.now(); clearTimeout(joinTimer); if ($('tableBox').hidden) { enterTable(code); status('Connected.'); } setFrom(m); } return; }
+  if (!isHost && (topic === t.state || (topic === t.hb && m && m.st))) { if (topic === t.hb) { lastSeen = Date.now(); m = m.st; } if (m && m.main) { const rv = m.rev || 0; if (rv < lastRev || (topic === t.hb && rv === lastRev)) return; lastRev = rv; lastSeen = Date.now(); clearInterval(joinTimer); if ($('tableBox').hidden) { enterTable(code); status('Connected.'); } setFrom(m); } return; }
   if (!isHost && topic === t.hb) { lastSeen = Date.now(); return; }
 }
 
@@ -501,10 +508,11 @@ function hostTable(c, resume) {
     store.names[uid] = myName() || store.names[uid] || 'Host';
     sub(T(c).act); enterTable(c); publishState();
     status(`Table ${c} is open. Players join with this code.`);
-    clearInterval(hbTimer); hbTimer = setInterval(() => { if (client && client.connected) client.publish(T(c).hb, JSON.stringify({ t: Date.now() })); }, 4000);
+    clearInterval(hbTimer); hbTimer = setInterval(() => { if (client && client.connected) client.publish(T(c).hb, JSON.stringify({ t: Date.now(), st: store })); }, 4000);
   });
 }
 function publishState() {
+  store.rev = (store.rev || 0) + 1;
   try { localStorage.setItem('lc_host_' + store.main.code, JSON.stringify(store)); } catch (e) {}
   if (client && client.connected) client.publish(T(code).state, JSON.stringify(store), { qos: 1, retain: true });
   setFrom(store);
@@ -535,7 +543,9 @@ function joinTable(c) {
   connect(() => {
     sub(T(c).state); sub(T(c).hb); hello();
     clearTimeout(joinTimer);
-    joinTimer = setTimeout(() => { if ($('tableBox').hidden) { status(`No open table with code ${c}. Check the code, and make sure the person who opened it still has the page open.`, true); try { client.end(true); } catch (e) {} code = null; } }, 8000);
+    let waited = 0; clearInterval(joinTimer);
+    joinTimer = setInterval(() => { if (!$('tableBox').hidden) { clearInterval(joinTimer); return; } waited += 3; hello();
+      if (waited >= 20) status(`Still looking for table ${c}… Check the code, and that the host's page says "relays connected" at the bottom. You can keep waiting.`, true); }, 3000);
   });
 }
 setInterval(() => { if (code && !isHost && !$('tableBox').hidden && lastSeen && Date.now() - lastSeen > 15000) status('The table host seems offline. Ask them to keep the page open – it will continue when they are back.', true); else if (code && !isHost && lastSeen) { const g = $('netNote'); if (g && g.textContent.startsWith('The table host')) g.hidden = true; } }, 3000);
@@ -797,5 +807,6 @@ boot();
 })();
 </script>
 
+<div id="relayNote">v3 · dual relay · connecting…</div>
 </body>
 </html>
