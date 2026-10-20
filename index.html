@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Last Call Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Josefin+Sans:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a night-time bar table – the printed board on the left, your mat and hand on the right; stacks on phones. */
+:root{
+  --night:#1b2033; --panel:#252d45; --panel-2:#2f3955; --line:#3d4868;
+  --cream:#f7f1e6; --ink:#2a2433; --muted:#a9b0c6; --text:#f3eee4;
+  --gold:#f2c14e; --pressure:#e2574c; --money:#3e9b5c; --plum:#8c5ba8; --teal:#2fa59a;
+  --r-bar:#e2574c; --r-ser:#2fa59a; --r-bou:#e8a83a; --r-man:#5c6bc0;
+  --f-display:'Josefin Sans',system-ui,sans-serif; --f-body:'Work Sans',system-ui,sans-serif; --f-label:'Bebas Neue','Arial Narrow',sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--text)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--night)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%;height:auto}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.lbl{font-family:var(--f-label);letter-spacing:.08em;font-size:15px;color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+.btn{background:var(--gold);color:var(--ink);font-weight:700;padding:10px 16px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+.btn.small{padding:6px 10px;font-size:13px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--night);display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:10px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-size:22px;letter-spacing:.04em;color:var(--gold)}
+.brand small{font-family:var(--f-label);color:var(--muted);font-size:15px;letter-spacing:.1em;margin-left:6px}
+.stat{display:flex;flex-direction:column;line-height:1.05}
+.stat b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.meter{display:flex;gap:3px;margin-top:3px}
+.meter i{width:12px;height:8px;border-radius:2px;background:var(--panel-2)}
+.meter i.on{background:var(--pressure)}
+.meter i.skip{outline:1px solid #b0373e}
+.spacer{flex:1}
+.timer{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums;color:var(--gold);min-width:70px;text-align:right}
+.timer.hot{color:var(--pressure)}
+
+/* lobby */
+.lobby{max-width:980px;margin:28px auto;display:grid;gap:24px}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:center}
+.hero img{border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.hero h1{font-size:clamp(36px,6vw,64px);color:var(--gold);line-height:1}
+.hero p{color:var(--muted);max-width:52ch}
+.joinrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.joinrow input.name{letter-spacing:normal;text-transform:none;font-family:var(--f-body);font-size:16px;width:170px}
+.joinrow input{font:inherit;font-family:var(--f-display);font-size:20px;letter-spacing:.2em;text-transform:uppercase;width:130px;padding:9px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--text)}
+.seats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.seat{background:var(--panel);border-radius:14px;padding:10px;display:grid;gap:8px;border:2px solid transparent}
+.seat.mine{border-color:var(--gold)}
+.seat img{border-radius:10px;aspect-ratio:1485/1050;object-fit:cover;width:100%}
+.seat .who{font-weight:600;min-height:1.4em}
+.code{font-family:var(--f-display);font-size:34px;letter-spacing:.18em;color:var(--gold)}
+.note{color:var(--muted);font-size:13px}
+.warn{background:#4a2330;color:#ffd9d4;border-radius:10px;padding:10px 12px}
+
+/* game */
+.game{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:18px;margin-top:14px;align-items:start}
+.boardwrap{position:relative;width:100%;aspect-ratio:3960/2800;border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.45);background:var(--cream)}
+.boardwrap>img.bg{position:absolute;inset:0;width:100%;height:100%}
+.ov{position:absolute;transform:translate(-50%,-50%);pointer-events:none;transition:left .6s ease,top .6s ease}
+.ov.tok{border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+.custcard{position:absolute;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:zoom-in;padding:0;background:none}
+.custcard img{width:100%;display:block;border-radius:6px}
+.custcard .ix{position:absolute;width:15.5%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);transition:left .5s ease;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.custcard .drinks{position:absolute;right:6%;top:58.5%;font-family:var(--f-label);font-size:clamp(8px,1vw,13px);background:var(--plum);color:#fff;padding:1px 5px;border-radius:5px}
+.custcard.hit{animation:hit .9s ease}
+@keyframes hit{0%{transform:scale(1)}30%{transform:scale(1.06);box-shadow:0 0 0 4px var(--gold)}100%{transform:scale(1)}}
+.evcard{position:absolute;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.seattoks{position:absolute;display:flex;gap:2px;transform:translateY(-50%)}
+.seattoks img{width:clamp(12px,2vw,26px);border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+.side{display:grid;gap:14px;min-width:0}
+.panel{background:var(--panel);border-radius:14px;padding:14px;display:grid;gap:10px;min-width:0}
+.phase{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.phase h2{font-size:22px}
+.pill{font-family:var(--f-label);letter-spacing:.08em;font-size:14px;padding:3px 9px;border-radius:999px;background:var(--panel-2);color:var(--muted)}
+.pill.go{background:var(--money);color:#fff}
+.pill.wait{background:var(--panel-2);color:var(--gold)}
+.pill.bad{background:var(--pressure);color:#fff}
+.banner{background:#4a2330;border-left:4px solid var(--pressure);padding:8px 12px;border-radius:8px;font-weight:600}
+
+/* mat */
+.roletabs{display:flex;gap:6px;flex-wrap:wrap}
+.roletabs button{padding:6px 10px;background:var(--panel-2);color:var(--text);font-weight:600}
+.roletabs button[aria-pressed=true]{background:var(--gold);color:var(--ink)}
+.mat{position:relative;width:100%;aspect-ratio:1485/1050;border-radius:10px;overflow:hidden}
+.mat>img.matbg{width:100%;height:100%;display:block}
+.slot{position:absolute;width:21.2%;aspect-ratio:630/880;border-radius:6px;background:transparent;padding:0}
+.slot.active{outline:3px solid var(--gold);outline-offset:2px}
+.slot img{width:100%;display:block;border-radius:6px}
+.slottok{position:absolute;width:7.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%)}
+.slotname{position:absolute;font-family:var(--f-label);font-size:clamp(10px,1.2vw,14px);letter-spacing:.06em;color:var(--ink);background:rgba(247,241,230,.92);padding:1px 6px;border-radius:5px;transform:translateX(-50%);white-space:nowrap}
+.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.hc{position:relative;padding:0;background:none;border-radius:7px;transition:transform .15s}
+.hc img{width:100%;display:block;border-radius:7px}
+.hc:hover:not(:disabled){transform:translateY(-3px)}
+.hc:disabled{opacity:.35;cursor:not-allowed}
+.hc .n{position:absolute;right:4px;bottom:4px;background:var(--ink);color:var(--cream);font-family:var(--f-label);font-size:13px;padding:0 6px;border-radius:6px}
+.seatpick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.seatpick button{background:var(--panel-2);color:var(--text);padding:7px 6px;text-align:left;font-size:13px;line-height:1.2}
+.seatpick button[aria-pressed=true]{background:var(--gold);color:var(--ink);font-weight:700}
+.seatpick button:disabled{opacity:.35;cursor:not-allowed}
+.seatpick small{display:block;color:inherit;opacity:.75}
+.problems{color:#ffb3a8;font-size:13px}
+.readyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* team */
+.team{display:grid;gap:8px}
+.mate{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel-2);border-radius:10px;padding:8px}
+.mate .dot{width:12px;height:12px;border-radius:50%}
+.mate .plan{font-size:13px;color:var(--muted)}
+.mate .plan b{color:var(--text);font-weight:600}
+
+/* reveal */
+.steps{display:grid;gap:8px}
+.st{display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;align-items:center;background:var(--panel-2);border-radius:10px;padding:8px;animation:in .45s ease both}
+.st img{width:54px;border-radius:5px}
+.st .r{font-family:var(--f-label);letter-spacing:.08em;font-size:14px}
+.st.bad{opacity:.7}
+.st .txt{font-size:14px}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.st,.custcard.hit{animation:none}.ov{transition:none}}
+.delta{display:flex;gap:16px;flex-wrap:wrap;font-weight:600}
+.log{max-height:260px;overflow:auto;font-size:13px;color:var(--muted);display:grid;gap:4px}
+.log b{color:var(--text)}
+
+/* end */
+.end{text-align:center;display:grid;gap:12px;justify-items:center;padding:20px}
+.end h2{font-size:44px}
+.win{color:var(--gold)} .lose{color:var(--pressure)}
+
+/* dialog */
+.zoom{position:fixed;inset:0;z-index:20;background:rgba(10,12,22,.82);display:grid;place-items:center;padding:20px}
+.zoom img{max-height:86vh;max-width:min(92vw,520px);border-radius:12px}
+details.rules{background:var(--panel);border-radius:14px;padding:10px 14px}
+details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.08em;font-size:17px}
+.rulesgrid{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:16px;margin-top:10px}
+.rulesgrid ul{margin:0;padding-left:18px;display:grid;gap:4px}
+
+@media (max-width:980px){.game{grid-template-columns:minmax(0,1fr)}.hero{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:620px){.seats{grid-template-columns:repeat(2,minmax(0,1fr))}.rulesgrid{grid-template-columns:minmax(0,1fr)}.stat b{font-size:18px}.brand small{display:none}}
+</style>
+</head>
+<body>
+
+
+<header class="top" id="top">
+  <div class="brand">LAST CALL <small>ONLINE PLAYTEST · ITERATION 4</small></div>
+  <div class="spacer"></div>
+  <div id="hud" hidden style="display:contents">
+    <div class="stat"><span class="lbl">ROUND</span><b id="hRound">1/8</b></div>
+    <div class="stat"><span class="lbl">REVENUE · GOAL $28</span><b id="hRev">$0</b></div>
+    <div class="stat"><span class="lbl">PRESSURE · LOSE AT 8</span><div class="meter" id="hMeter"></div></div>
+    <div class="timer" id="hTimer" aria-live="off"></div>
+  </div>
+</header>
+
+<main id="app">
+  <section class="lobby" id="lobby">
+    <div class="hero">
+      <div>
+        <span class="lbl">4-PLAYER CO-OP · 8 ROUNDS · RULES ITERATION 4</span>
+        <h1>Last Call</h1>
+        <p>Play the mechanics together, each on your own device. No accounts needed: one person opens a table and shares the code. Cards, board and tokens are the real Figma art, and the rules run themselves.</p>
+        <div id="lobbyStatus" class="note">Connecting to the table…</div>
+        <div class="joinrow" id="joinRow" hidden>
+          <input id="myName" class="name" maxlength="24" placeholder="Your name" aria-label="Your name" autocomplete="nickname">
+          <button class="btn" id="btnCreate">Open a new table</button>
+          <span class="note">or join</span>
+          <input id="joinCode" maxlength="4" placeholder="CODE" aria-label="Table code" autocomplete="off">
+          <button class="btn ghost" id="btnJoin">Join</button>
+        </div>
+      </div>
+      <img src="img/board.webp" alt="The Last Call board" width="1980" height="1400">
+    </div>
+    <div id="tableBox" class="panel" hidden>
+      <div class="phase"><span class="lbl">TABLE CODE</span><span class="code" id="tCode"></span><span class="note">Share this code with the other three players.</span><div class="spacer"></div><button class="btn small ghost" id="btnLeave">Leave table</button></div>
+      <div class="seats" id="seatList"></div>
+      <div class="note">Pick the role you'll play. Testing alone? One device can take several roles and switch between them with tabs.</div>
+      <div class="warn" id="hostNote" hidden>You opened this table, so the game lives on this device. Keep this page open (and the screen awake) until the night is over. If you reload, rejoin with the same code to reopen it.</div>
+      <div class="readyrow"><button class="btn" id="btnStart" disabled>Start the night</button><span class="note" id="startNote">Waiting for all four roles.</span></div>
+    </div>
+  </section>
+
+  <section id="game" hidden>
+    <div class="game">
+      <div style="display:grid;gap:14px;min-width:0">
+        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp" alt="Board"></div>
+        <details class="rules">
+          <summary>RULES REMINDER</summary>
+          <div class="rulesgrid">
+            <ul>
+              <li><b>Plan</b> on rounds 1, 3, 5, 7: the timer is 60 · 60 · 45 · 30 seconds. Place card A (this round) and card B (next round). When the timer ends, plans lock.</li>
+              <li><b>Act</b>: Bartender first, then Server, Bouncer, Manager. Odd rounds play A, even rounds play B.</li>
+              <li><b>Night Event</b>, then <b>last orders</b>: +1 Pressure per customer still at 4 (max +2).</li>
+              <li>Reaching 4: +1 Pressure. A drink that would go above 4 is wasted. Cocktail can't go to the First Date.</li>
+              <li><b>Pressure 5+</b> when a planning round starts: no planning, everyone replays the same A and B.</li>
+              <li><b>Pressure 8</b>: you lose. After Round 8: win with <b>$28+</b> and nobody at 4.</li>
+              <li>Powers work once every 2 rounds and apply automatically.</li>
+            </ul>
+            <img src="img/drinkmenu.webp" alt="Drink Menu reference card" width="315" height="440">
+          </div>
+        </details>
+      </div>
+      <div class="side">
+        <div class="warn" id="netNote" hidden></div>
+        <div class="panel" id="phasePanel"></div>
+        <div class="panel" id="minePanel"></div>
+        <div class="panel"><span class="lbl">THE TEAM</span><div class="team" id="team"></div></div>
+        <div class="panel"><span class="lbl">NIGHT SO FAR</span><div class="log" id="log"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="zoom" id="zoom" hidden><img id="zoomImg" alt=""></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script>
+// ===== Last Call – Iteration 4 rules engine (pure, no DOM) =====
+const ROLES = ['bar', 'ser', 'bou', 'man'];
+const ROLE_NAME = { bar: 'Bartender', ser: 'Server', bou: 'Bouncer', man: 'Manager' };
+const DECKS = {
+  bar: { beer: 3, wine: 2, cocktail: 2, water: 1, df: 1, clean: 1 },
+  ser: { beer: 2, wine: 2, cocktail: 1, water: 2, df: 2, clean: 1 },
+  bou: { calm: 4, ride: 3, water: 1, beer: 1, clean: 1 },
+  man: { ride: 3, calm: 2, water: 2, clean: 2, beer: 1 },
+};
+const CARD_NAME = { beer: 'Beer', wine: 'Wine', cocktail: 'Cocktail', water: 'Water', df: 'Drink + Food', clean: 'Clean', calm: 'Calm', ride: 'Ride Home' };
+const TARGETED = { beer: 1, wine: 1, cocktail: 1, water: 1, df: 1, ride: 1 };
+const CUST = ['The Regular', 'Karaoke Star', 'First Date', 'Off-Duty Chef', 'Sports Fan', 'Tourist'];
+const EVENTS = ['argument', 'rush', 'drive', 'spilled', 'karaoke', 'inspection', 'trivia', 'tipper'];
+const EVENT_NAME = { argument: 'Argument', rush: 'Last Call Rush', drive: 'I Can Drive', spilled: 'Spilled Drinks', karaoke: 'Karaoke Encore', inspection: 'Surprise Inspection', trivia: 'Trivia Night', tipper: 'Big Tipper' };
+const PLAN_SECONDS = { 1: 60, 3: 60, 5: 45, 7: 30 };
+const GOAL = 28, LOSE_AT = 8, SKIP_AT = 5, ROUNDS = 8;
+
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+function seatName(t) { return `Seat ${t + 1} (${CUST[t]})`; }
+
+function newGame(code, createdBy, rng = Math.random) {
+  const deck = EVENTS.slice();
+  for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+  return {
+    v: 1, gid: Math.floor(rng() * 1e9).toString(36), code, createdBy, phase: 'plan', round: 1, cycle: 1, step: 1,
+    P: 0, rev: 0, rides: 0, cust: CUST.map(() => ({ ix: 0, dr: 0 })),
+    deck, evIdx: 0, powers: { bar: false, ser: false, bou: false, man: false },
+    plans: null, skipped: false, planEndsAt: 0, last: null, history: [], result: null,
+  };
+}
+
+function addP(s, n, notes, why) {
+  if (!n) return;
+  const before = s.P;
+  s.P = Math.max(0, s.P + n);
+  if (s.P !== before) notes.push(`${n > 0 ? '+' : ''}${s.P - before} Pressure (${why})`);
+}
+
+// Raise a customer by n from a drink; triggers Karaoke (reach 3) and reaching 4.
+function raise(s, t, n, notes) {
+  const c = s.cust[t]; const old = c.ix; c.ix = old + n;
+  if (t === 1 && old < 3 && c.ix >= 3) addP(s, 1, notes, 'Karaoke Star reached 3');
+  if (old < 4 && c.ix === 4) addP(s, 1, notes, `${CUST[t]} reached 4`);
+}
+
+function act(s, role, card, t, rnd) {
+  const notes = []; const name = CARD_NAME[card];
+  const needT = TARGETED[card];
+  if (needT && (t === null || t === undefined || t < 0 || t > 5)) return { ok: false, text: `${name} had no target – wasted.` };
+  const c = needT ? s.cust[t] : null;
+  const who = needT ? seatName(t) : '';
+  if (card === 'beer' || card === 'wine' || card === 'cocktail') {
+    const n = card === 'cocktail' ? 2 : 1;
+    if (card === 'cocktail' && t === 2) return { ok: false, text: `Cocktail → ${who}: the First Date can't have Cocktails – wasted.` };
+    if (c.ix + n > 4) return { ok: false, text: `${name} → ${who}: would push them above 4 (now ${c.ix}) – wasted.` };
+    const old = c.ix;
+    raise(s, t, n, notes);
+    s.rev += card === 'cocktail' ? 2 : 1;
+    if (card === 'cocktail') {
+      if (role === 'bar' && !s.powers.bar) { s.powers.bar = true; notes.push('Bartender power: no Pressure from this Cocktail'); }
+      else addP(s, 1, notes, 'Cocktail');
+    }
+    if (card === 'wine' && old <= 1) addP(s, -1, notes, 'Wine for a calm guest');
+    c.dr += 1;
+    if (t === 4 && c.dr === 3) addP(s, 1, notes, "Sports Fan's 3rd drink");
+    rnd.alc++; rnd.drinks++;
+    return { ok: true, text: `${name} → ${who}: +$${card === 'cocktail' ? 2 : 1}, Intoxication ${old}→${c.ix}.` + (notes.length ? ' ' + notes.join('; ') + '.' : '') };
+  }
+  if (card === 'water') {
+    if (c.ix === 0) return { ok: false, text: `Water → ${who}: already at 0 – no effect.` };
+    const old = c.ix; c.ix = Math.max(0, c.ix - (t === 0 ? 2 : 1));
+    return { ok: true, text: `Water → ${who}: Intoxication ${old}→${c.ix}.` };
+  }
+  if (card === 'df') {
+    const old = c.ix; let red = 0; const extra = [];
+    if (t === 3) { red++; if (c.ix > 0) extra.push('Off-Duty Chef −1'); }
+    if (role === 'ser' && !s.powers.ser && c.ix > 0) { s.powers.ser = true; red++; extra.push('Server power −1'); }
+    c.ix = Math.max(0, c.ix - red); s.rev += 1; rnd.drinks++;
+    return { ok: true, text: `Drink + Food → ${who}: +$1, Intoxication ${old}→${c.ix}${extra.length ? ' (' + extra.join(', ') + ')' : ''}.` };
+  }
+  if (card === 'calm') {
+    if (s.P === 0) return { ok: false, text: 'Calm: Pressure already 0 – no effect.' };
+    let n = 1;
+    if (role === 'bou' && !s.powers.bou) { s.powers.bou = true; n = 2; notes.push('Bouncer power'); }
+    const old = s.P; s.P = Math.max(0, s.P - n);
+    return { ok: true, text: `Calm: Pressure ${old}→${s.P}${notes.length ? ' (' + notes[0] + ')' : ''}.` };
+  }
+  if (card === 'clean') {
+    rnd.clean = true; const old = s.P; s.P = Math.max(0, s.P - 1);
+    return { ok: true, text: `Clean: Pressure ${old}→${s.P}. Spilled Drinks is cancelled this round.` };
+  }
+  if (card === 'ride') {
+    const need = t === 5 ? 3 : 2;
+    if (c.ix < need) return { ok: false, text: `Ride Home → ${who}: needs Intoxication ${need}+ (now ${c.ix}) – wasted.` };
+    let n = 2; const extra = [];
+    if (role === 'man' && !s.powers.man) { s.powers.man = true; n = 3; extra.push('Manager power −1'); }
+    const old = s.P; s.P = Math.max(0, s.P - n); c.ix = 0; c.dr = 0; s.rides++;
+    return { ok: true, text: `Ride Home → ${who}: home safe, a new guest sits down. Pressure ${old}→${s.P}${extra.length ? ' (' + extra[0] + ')' : ''}.` };
+  }
+  return { ok: false, text: 'Unknown card.' };
+}
+
+function eventEffect(s, e, rnd) {
+  const ix = s.cust.map(c => c.ix); const any = v => ix.some(x => x >= v); const has4 = ix.includes(4);
+  switch (e) {
+    case 'argument': return any(3) ? { dP: 2, why: 'a customer is at 3+' } : { dP: 1, why: 'nobody at 3+' };
+    case 'rush': return rnd.alc < 2 ? { dP: 1, why: `only ${rnd.alc} alcoholic drink${rnd.alc === 1 ? '' : 's'} this round` } : { dP: 0, why: `${rnd.alc} alcoholic drinks served` };
+    case 'drive': return has4 ? { dP: 2, why: 'a customer is at 4' } : (ix.includes(3) ? { dP: 1, why: 'a customer is at 3' } : { dP: 0, why: 'nobody at 3 or 4' });
+    case 'spilled': return rnd.clean ? { dP: 0, why: 'Clean was played' } : { dP: 2, why: 'nobody played Clean' };
+    case 'karaoke': return ix[1] >= 2 ? { dP: 2, why: 'Karaoke Star is at 2+' } : { dP: 1, why: 'Karaoke Star is below 2' };
+    case 'inspection': return has4 ? { dP: 2, why: 'a customer is at 4' } : { dP: 1, why: 'nobody at 4' };
+    case 'trivia': return { dRev: -Math.min(2, s.rev), dP: 0, why: 'the quiz crowd drinks tap water' };
+    case 'tipper': return rnd.drinks >= 2 ? { dRev: 2, dP: 0, why: `${rnd.drinks} drinks served` } : { dP: 1, why: `only ${rnd.drinks} drink${rnd.drinks === 1 ? '' : 's'} served` };
+  }
+  return { dP: 0, why: '' };
+}
+
+// Resolve one round. slot = 'A' (odd round) or 'B' (even round). Returns new state.
+function resolveRound(S) {
+  const s = clone(S);
+  const slot = s.round % 2 === 1 ? 'A' : 'B';
+  const rnd = { alc: 0, drinks: 0, clean: false };
+  const before = { P: s.P, rev: s.rev };
+  const steps = [];
+  for (const role of ROLES) {
+    const pl = s.plans && s.plans[role] && s.plans[role][slot];
+    if (s.P >= LOSE_AT) { steps.push({ role, card: pl ? pl.c : null, t: pl ? pl.t : null, ok: false, text: 'Not played – the bar already closed.' }); continue; }
+    if (!pl || !pl.c) { steps.push({ role, card: null, t: null, ok: false, text: 'No card was placed.' }); continue; }
+    const r = act(s, role, pl.c, pl.t, rnd);
+    steps.push({ role, card: pl.c, t: pl.t ?? null, ok: r.ok, text: r.text });
+  }
+  let event = null, lastOrders = null;
+  if (s.P < LOSE_AT) {
+    const e = s.deck[s.evIdx]; s.evIdx++;
+    const eff = eventEffect(s, e, rnd);
+    if (eff.dRev) s.rev = Math.max(0, s.rev + eff.dRev);
+    if (eff.dP) s.P = Math.max(0, s.P + eff.dP);
+    const parts = [];
+    if (eff.dRev) parts.push(`${eff.dRev > 0 ? '+' : '−'}$${Math.abs(eff.dRev)}`);
+    if (eff.dP) parts.push(`+${eff.dP} Pressure`);
+    event = { key: e, text: `${parts.length ? parts.join(', ') : 'Nothing happens'} – ${eff.why}.` };
+    if (s.P < LOSE_AT) {
+      const n4 = s.cust.filter(c => c.ix === 4).length; const add = Math.min(2, n4);
+      s.P += add;
+      lastOrders = add ? `+${add} Pressure – ${n4} customer${n4 === 1 ? '' : 's'} still at 4.` : 'Nobody at 4. No Pressure.';
+    }
+  }
+  if (s.P >= LOSE_AT) s.result = { win: false, reason: `Pressure reached ${LOSE_AT} in Round ${s.round}. The bar is shut down.` };
+  else if (s.round === ROUNDS) {
+    const at4 = s.cust.some(c => c.ix === 4);
+    if (s.rev >= GOAL && !at4) s.result = { win: true, reason: `$${s.rev} earned and every customer below 4.` };
+    else s.result = { win: false, reason: s.rev < GOAL ? `Only $${s.rev} – the goal was $${GOAL}.` : 'A customer is still at Intoxication 4.' };
+  }
+  s.last = { round: s.round, slot, skipped: !!s.skipped, steps, event, lastOrders, before, after: { P: s.P, rev: s.rev } };
+  s.history = (s.history || []).concat([{ round: s.round, P: s.P, rev: s.rev, event: event ? event.key : null, skipped: !!s.skipped }]);
+  s.phase = 'reveal';
+  s.step++;
+  return s;
+}
+
+// From the reveal of round r, go on: returns new state (plan phase, or straight to the next resolution).
+function nextRound(S, now) {
+  let s = clone(S);
+  if (s.result) { s.phase = 'end'; s.step++; return s; }
+  s.round += 1;
+  s.skipped = false;
+  if (s.round % 2 === 0) return resolveRound(s); // B cards, no planning
+  // new planning cycle
+  s.cycle += 1; s.powers = { bar: false, ser: false, bou: false, man: false };
+  if (s.P >= SKIP_AT) { s.skipped = true; return resolveRound(s); } // replay same A and B
+  s.plans = null; s.phase = 'plan'; s.planEndsAt = now + PLAN_SECONDS[s.round] * 1000; s.step++;
+  return s;
+}
+
+// Freeze plan docs (by role) into the state, then resolve the odd round.
+function lockPlansAndResolve(S, planDocs) {
+  const s = clone(S); s.plans = {};
+  for (const role of ROLES) {
+    const d = planDocs[role];
+    const ok = d && d.cycle === s.cycle && d.gid === s.gid;
+    const norm = x => (x && x.c ? { c: x.c, t: TARGETED[x.c] ? (Number.isInteger(x.t) ? x.t : null) : null } : null);
+    s.plans[role] = ok ? { A: norm(d.A), B: norm(d.B) } : { A: null, B: null };
+  }
+  return resolveRound(s);
+}
+
+// Legality of a draft plan for one role (deck counts, distinct targets)
+function planProblems(role, A, B) {
+  const probs = []; const deck = DECKS[role];
+  if (A && B && A.c && B.c && A.c === B.c && (deck[A.c] || 0) < 2) probs.push(`You have only one ${CARD_NAME[A.c]}.`);
+  if (A && B && A.c && B.c && TARGETED[A.c] && TARGETED[B.c] && A.t != null && A.t === B.t) probs.push('A and B can\'t target the same seat.');
+  for (const [k, x] of [['A', A], ['B', B]]) if (x && x.c && TARGETED[x.c] && (x.t == null)) probs.push(`Slot ${k}: pick a seat.`);
+  return probs;
+}
+
+if (typeof module !== 'undefined') module.exports = { ROLES, DECKS, newGame, resolveRound, nextRound, lockPlansAndResolve, planProblems, act, PLAN_SECONDS, GOAL };
+
+</script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const ROLE_COLOR = { bar: 'var(--r-bar)', ser: 'var(--r-ser)', bou: 'var(--r-bou)', man: 'var(--r-man)' };
+const EV_IMG = { argument: 'ev_argument', rush: 'ev_rush', drive: 'ev_drive', spilled: 'ev_spilled', karaoke: 'ev_karaoke', inspection: 'ev_inspection', trivia: 'ev_trivia', tipper: 'ev_tipper' };
+const img = k => `img/${k}.webp`;
+const cardImg = (role, c) => img(`${role}_${c}`);
+const W = 3960, H = 2800;
+const pct = (x, y) => ({ left: (x / W * 100) + '%', top: (y / H * 100) + '%' });
+
+// ---------- peer-to-peer table (PeerJS). The device that opens the table holds the game. ----------
+const PREFIX = 'lastcall-iter4-';
+function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+let uid = load('lc_uid'); if (!uid) { uid = 'p' + Math.random().toString(36).slice(2, 10); save('lc_uid', uid); }
+let code = null, state = null, seats = {}, plans = {}, names = {};
+let activeRole = null, activeSlot = 'A', draft = {}, lastShownStep = -1, zoomOpen = false;
+let peer = null, conns = [], hostConn = null, isHost = false, store = null, retryTimer = null;
+
+function status(msg, warn) { const s = $('lobbyStatus'); s.innerHTML = warn ? `<div class="warn">${esc(msg)}</div>` : esc(msg); const g = $('netNote'); if (g) { g.textContent = msg; g.hidden = !warn; } }
+function myName() { return ($('myName').value || '').trim().slice(0, 24); }
+
+function boot() {
+  if (typeof Peer === 'undefined') { status('Could not load the connection library. Check your internet connection and reload.', true); return; }
+  $('joinRow').hidden = false; $('myName').value = load('lc_name') || '';
+  status('Type your name, then open a new table or join with a code.');
+  const last = load('lc_code'); if (last) $('joinCode').value = last;
+}
+function needName() { const n = myName(); if (!n) { status('Type your name first.', true); $('myName').focus(); return null; } save('lc_name', n); return n; }
+
+$('btnCreate').onclick = () => { if (!needName()) return; const c = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); hostTable(c, null); };
+$('btnJoin').onclick = () => { if (!needName()) return; const c = $('joinCode').value.trim().toUpperCase(); if (c.length !== 4) return status('Table codes have 4 letters.', true);
+  const saved = load('lc_host_' + c); if (saved && load('lc_hostcode') === c) hostTable(c, JSON.parse(saved)); else joinTable(c); };
+$('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
+$('btnLeave').onclick = () => { if (!isHost) for (const r of ROLES) if (seats[r] === uid) request({ type: 'seat', role: r, take: false }); setTimeout(leave, 150); };
+
+function leave() { clearTimeout(retryTimer); try { peer && peer.destroy(); } catch (e) {} peer = null; conns = []; hostConn = null; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
+function enterTable(c) { code = c; save('lc_code', c); $('joinRow').hidden = true; $('tableBox').hidden = false; $('tCode').textContent = c; $('hostNote').hidden = !isHost; }
+
+function setFrom(st) { state = st.main; seats = Object.assign({}, st.seats); plans = st.plans || {}; names = st.names || {}; render(); }
+
+// ----- host -----
+function hostTable(c, resume, tries = 0) {
+  status(resume ? `Reopening table ${c}…` : 'Opening a table…');
+  try { peer && peer.destroy(); } catch (e) {}
+  peer = new Peer(PREFIX + c);
+  peer.on('open', () => {
+    isHost = true;
+    store = resume || { main: { v: 1, code: c, createdBy: uid, phase: 'lobby', step: 0 }, seats: {}, plans: {}, names: {} };
+    store.names[uid] = myName() || store.names[uid] || 'Host';
+    save('lc_hostcode', c); enterTable(c); broadcast();
+  });
+  peer.on('connection', conn => {
+    conns.push(conn);
+    conn.on('open', () => conn.send({ type: 'sync', store }));
+    conn.on('data', m => { if (m && hostApply(m, m.from)) broadcast(); else try { conn.send({ type: 'sync', store }); } catch (e) {} });
+    conn.on('close', () => { conns = conns.filter(x => x !== conn); });
+  });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') {
+      if (resume && tries < 12) { status(`Table ${c} is still closing on the server. Retrying…`); retryTimer = setTimeout(() => hostTable(c, resume, tries + 1), 3000); }
+      else if (!resume) hostTable(Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''), null);
+      else status('Could not reopen that table. Open a new one.', true);
+    } else if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') status('Connection problem. Check the internet connection and try again.', true);
+  });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+}
+function broadcast() { try { localStorage.setItem('lc_host_' + store.main.code, JSON.stringify(store)); } catch (e) {} const msg = { type: 'sync', store }; conns.forEach(c => { try { if (c.open) c.send(msg); } catch (e) {} }); setFrom(store); }
+function hostApply(a, from) {
+  if (!a || !from) return false;
+  if (a.type === 'hello') { if (a.name) store.names[from] = String(a.name).slice(0, 24); return true; }
+  if (a.type === 'seat') { const cur = store.seats[a.role]; if (!ROLES.includes(a.role)) return false;
+    if (a.take) { if (cur && cur !== from) return false; store.seats[a.role] = from; } else if (cur === from) delete store.seats[a.role]; return true; }
+  if (a.type === 'plan') { if (store.seats[a.role] !== from || !store.main || store.main.phase !== 'plan') return false; store.plans[a.role] = a.body; return true; }
+  if (a.type === 'tr') { const s = store.main; if (s.step !== a.step) return false; const n = applyTransition(s, a.kind); if (!n) return false; store.main = n; return true; }
+  return false;
+}
+function applyTransition(s, kind) {
+  const now = Date.now();
+  if (kind === 'start' || kind === 'again') { if (!ROLES.every(r => store.seats[r])) return null; const g = newGame(s.code || code, s.createdBy); g.planEndsAt = now + PLAN_SECONDS[1] * 1000; g.step = (s.step || 0) + 1; return g; }
+  if (kind === 'lobby') return { v: 1, code: s.code || code, createdBy: s.createdBy, phase: 'lobby', step: s.step + 1 };
+  if (kind === 'continue' && s.phase === 'reveal') return nextRound(s, now);
+  if (kind === 'lock' && s.phase === 'plan') return lockPlansAndResolve(s, store.plans);
+  return null;
+}
+
+// ----- player -----
+function joinTable(c) {
+  status(`Joining table ${c}…`);
+  try { peer && peer.destroy(); } catch (e) {}
+  peer = new Peer();
+  peer.on('open', () => connectHost(c));
+  peer.on('error', e => {
+    if (e.type === 'peer-unavailable') { if (code) { status('The table host is offline. Retrying…', true); retryTimer = setTimeout(() => connectHost(c), 3000); } else status(`No open table with code ${c}. The device that opened it must keep the page open.`, true); }
+    else if (e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error') status('Connection problem. Check the internet connection and try again.', true);
+  });
+}
+function connectHost(c) {
+  hostConn = peer.connect(PREFIX + c, { reliable: true });
+  hostConn.on('open', () => { if (!code) enterTable(c); status('Connected.'); hostConn.send({ type: 'hello', name: myName() || load('lc_name') || 'Player', from: uid }); });
+  hostConn.on('data', m => { if (m && m.type === 'sync') setFrom(m.store); });
+  hostConn.on('close', () => { if (!code) return; status('Lost the table host. Reconnecting…', true); clearTimeout(retryTimer); retryTimer = setTimeout(() => connectHost(c), 3000); });
+}
+
+function request(a) {
+  if (isHost) { if (hostApply(a, uid)) broadcast(); }
+  else if (hostConn && hostConn.open) hostConn.send(Object.assign({}, a, { from: uid }));
+  else status('Not connected to the table host right now.', true);
+}
+function transition(step, kind) { request({ type: 'tr', step, kind }); }
+function setSeat(role, take) { request({ type: 'seat', role, take: !!take }); }
+const nameOf = id => (names[id] || 'Player') + (id === uid ? ' (you)' : '');
+$('btnStart').onclick = () => transition(state.step, 'start');
+
+function tryLock() {
+  if (!isHost || !state || state.phase !== 'plan') return;
+  const all = ROLES.every(r => fresh(plans[r]) && plans[r].ready);
+  if (!all && Date.now() < state.planEndsAt + 300) return;
+  transition(state.step, 'lock');
+}
+
+// ---------- plan drafting ----------
+function myRoles() { return ROLES.filter(r => seats[r] === uid); }
+function fresh(p) { return !!(p && state && p.cycle === state.cycle && p.gid === state.gid); }
+function getDraft(role) {
+  const p = plans[role];
+  if (!draft[role] || draft[role].cycle !== state.cycle || draft[role].gid !== state.gid) {
+    draft[role] = fresh(p) ? { gid: state.gid, cycle: state.cycle, A: p.A || null, B: p.B || null, ready: !!p.ready } : { gid: state.gid, cycle: state.cycle, A: null, B: null, ready: false };
+  }
+  return draft[role];
+}
+let saveTimers = {};
+function pushDraft(role) {
+  clearTimeout(saveTimers[role]);
+  saveTimers[role] = setTimeout(() => {
+    const d = draft[role]; const body = { gid: d.gid, cycle: d.cycle, A: d.A, B: d.B, ready: !!d.ready, uid };
+    request({ type: 'plan', role, body });
+  }, 200);
+}
+function usedCount(d, c) { return (d.A && d.A.c === c ? 1 : 0) + (d.B && d.B.c === c ? 1 : 0); }
+function pickCard(role, c) {
+  const d = getDraft(role); if (d.ready) return;
+  const other = activeSlot === 'A' ? 'B' : 'A';
+  const keepT = d[activeSlot] && TARGETED[c] && d[activeSlot].t != null && !(d[other] && d[other].t === d[activeSlot].t) ? d[activeSlot].t : null;
+  d[activeSlot] = { c, t: TARGETED[c] ? keepT : null };
+  if (!TARGETED[c] && !d[other]) activeSlot = other;
+  pushDraft(role); render();
+}
+function pickSeat(role, t) {
+  const d = getDraft(role); if (d.ready || !d[activeSlot]) return;
+  d[activeSlot].t = t; pushDraft(role);
+  const other = activeSlot === 'A' ? 'B' : 'A'; if (!d[other]) activeSlot = other;
+  render();
+}
+function clearSlot(role, k) { const d = getDraft(role); if (d.ready) return; d[k] = null; activeSlot = k; pushDraft(role); render(); }
+function toggleReady(role) { const d = getDraft(role); d.ready = !d.ready; pushDraft(role); render(); }
+
+// ---------- render ----------
+function render() {
+  if (!code) return;
+  const inGame = state && state.phase && state.phase !== 'lobby';
+  $('lobby').hidden = !!inGame; $('game').hidden = !inGame; $('hud').hidden = !inGame;
+  if (!inGame) return renderLobby();
+  renderHud(); renderBoard(); renderPhase(); renderMine(); renderTeam(); renderLog();
+}
+
+function renderLobby() {
+  const box = $('seatList'); box.innerHTML = '';
+  for (const r of ROLES) {
+    const who = seats[r]; const mine = who === uid;
+    const el = document.createElement('div'); el.className = 'seat' + (mine ? ' mine' : '');
+    el.innerHTML = `<img src="${img('mat_' + r)}" alt="${ROLE_NAME[r]} mat"><span class="lbl" style="color:${ROLE_COLOR[r]}">${ROLE_NAME[r].toUpperCase()}</span><div class="who">${who ? esc(nameOf(who)) : '<span class="note">Open seat</span>'}</div>`;
+    const b = document.createElement('button'); b.className = 'btn small' + (mine ? ' ghost' : '');
+    b.textContent = mine ? 'Give up seat' : (who ? 'Taken' : 'Take this role'); b.disabled = !!who && !mine;
+    b.onclick = () => setSeat(r, !mine); el.appendChild(b); box.appendChild(el);
+  }
+  const full = ROLES.every(r => seats[r]);
+  $('btnStart').disabled = !full; $('startNote').textContent = full ? 'Everyone is seated. Anyone can start.' : `Waiting for ${ROLES.filter(r => !seats[r]).map(r => ROLE_NAME[r]).join(', ')}.`;
+}
+
+function renderHud() {
+  $('hRound').textContent = `${state.round}/8`; $('hRev').textContent = `$${state.rev}`;
+  const m = $('hMeter'); m.innerHTML = ''; for (let i = 1; i <= 8; i++) { const e = document.createElement('i'); if (state.P >= i) e.className = 'on'; else if (i >= 5) e.className = 'skip'; m.appendChild(e); }
+  m.title = `Pressure ${state.P} of 8`; m.setAttribute('aria-label', `Pressure ${state.P} of 8`);
+  tick();
+}
+function tick() {
+  const t = $('hTimer');
+  if (state && state.phase === 'plan') { const s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)); t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.className = 'timer' + (s <= 10 ? ' hot' : ''); }
+  else t.textContent = '';
+}
+
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function place(e, x, y, w) { const p = pct(x, y); e.style.left = p.left; e.style.top = p.top; if (w) e.style.width = (w / W * 100) + '%'; return e; }
+
+function renderBoard() {
+  const b = $('board'); b.querySelectorAll(':scope > :not(.bg)').forEach(n => n.remove());
+  const hitSeats = new Set();
+  if (state.phase === 'reveal' && state.last) state.last.steps.forEach(s => { if (s.ok && s.t != null) hitSeats.add(s.t); });
+  // customers
+  state.cust.forEach((c, i) => {
+    const x = 400 + i * 530 + 15, y = 465 + 125;
+    const btn = el('button', 'custcard' + (hitSeats.has(i) && lastShownStep !== state.step ? ' hit' : ''));
+    btn.style.left = (x / W * 100) + '%'; btn.style.top = (y / H * 100) + '%'; btn.style.width = (470 / W * 100) + '%';
+    btn.setAttribute('aria-label', `${CUST[i]}, Intoxication ${c.ix}`);
+    btn.innerHTML = `<img src="${img('cust_' + (i + 1))}" alt="">`;
+    const mk = el('img', 'ix'); mk.src = img('mk_intox'); mk.alt = ''; mk.style.left = ((91 + 112 * c.ix) / 630 * 100) + '%'; mk.style.top = (684 / 880 * 100) + '%'; btn.appendChild(mk);
+    if (i === 4) btn.appendChild(el('span', 'drinks', `DRINKS ${c.dr}`));
+    btn.onclick = () => openZoom(img('cust_' + (i + 1)));
+    b.appendChild(btn);
+  });
+  // target tokens of the slot being played next
+  if (state.phase === 'plan' || state.phase === 'reveal') {
+    const slot = state.phase === 'plan' ? 'A' : (state.last ? state.last.slot : 'A');
+    const bySeat = {};
+    for (const r of ROLES) {
+      let p = state.phase === 'plan' ? (fresh(plans[r]) ? plans[r][slot] : null) : (state.plans && state.plans[r] ? state.plans[r][slot] : null);
+      if (state.phase === 'plan' && myRoles().includes(r) && draft[r] && draft[r].cycle === state.cycle && draft[r].gid === state.gid) p = draft[r][slot];
+      if (p && p.t != null && TARGETED[p.c]) (bySeat[p.t] = bySeat[p.t] || []).push(r);
+    }
+    for (const [t, rs] of Object.entries(bySeat)) {
+      const box = el('div', 'seattoks'); place(box, 400 + (+t) * 530 + 300, 465 + 72);
+      rs.forEach(r => { const i = el('img'); i.src = img(`tok_${r}_${+t + 1}`); i.alt = ROLE_NAME[r]; box.appendChild(i); }); b.appendChild(box);
+    }
+  }
+  // markers
+  const tok = (k, x, y, d, label) => { const i = el('img', 'ov tok'); i.src = img(k); i.alt = label; place(i, x, y, d); b.appendChild(i); };
+  const P = Math.min(8, state.P); tok('mk_pressure', 180, 2770 - 20 - 240 - P * 259 + 120, 170, `Pressure ${state.P}`);
+  const rv = Math.min(30, state.rev), row = rv <= 15 ? 0 : 1, ri = row ? rv - 16 : rv; tok('mk_revenue', 400 + ri * 197 + 93, 1490 + row * 192 + 88, 130, `Revenue $${state.rev}`);
+  tok('mk_round', 1250 + (state.round - 1) * 290 + 175, 225, 100, `Round ${state.round}`);
+  tok('mk_rides', 1590 + Math.min(10, state.rides) * 132 + 60, 2160, 104, `Safe rides ${state.rides}`);
+  // night events
+  if (state.evIdx < 8) { const d = el('img', 'evcard'); d.src = img('back_night'); d.alt = 'Night Event deck'; place(d, 425, 1980, 480); d.style.transform = 'none'; b.appendChild(d); }
+  if (state.evIdx > 0) { const k = state.deck[state.evIdx - 1]; const d = el('img', 'evcard'); d.src = img(EV_IMG[k]); d.alt = EVENT_NAME[k]; place(d, 985, 1980, 480); d.style.transform = 'none'; d.style.cursor = 'zoom-in'; d.style.pointerEvents = 'auto'; d.onclick = () => openZoom(d.src); b.appendChild(d); }
+}
+
+function renderPhase() {
+  const p = $('phasePanel'); p.innerHTML = '';
+  if (state.phase === 'plan') {
+    const ready = ROLES.filter(r => fresh(plans[r]) && plans[r].ready).length;
+    p.appendChild(el('div', 'phase', `<h2>Plan · Round ${state.round}</h2><span class="pill wait">${ready}/4 READY</span>`));
+    p.appendChild(el('div', 'note', `Talk it through and place card A (Round ${state.round}) and card B (Round ${state.round + 1}). Plans lock when the timer ends or when all four are ready. Targets on the board show everyone's card A.`));
+  } else if (state.phase === 'reveal' && state.last) {
+    const L = state.last;
+    const head = el('div', 'phase', `<h2>Round ${L.round} · card ${L.slot}</h2>${state.result ? `<span class="pill ${state.result.win ? 'go' : 'bad'}">${state.result.win ? 'YOU WIN' : 'GAME OVER'}</span>` : ''}`);
+    p.appendChild(head);
+    if (L.skipped) p.appendChild(el('div', 'banner', `Pressure was ${L.before.P} when planning should start – planning skipped. Everyone replayed the same A and B.`));
+    const steps = el('div', 'steps');
+    L.steps.forEach((s, i) => {
+      const row = el('div', 'st' + (s.ok ? '' : ' bad'));
+      row.style.animationDelay = (lastShownStep === state.step ? 0 : i * 0.35) + 's';
+      row.innerHTML = `${s.card ? `<img src="${cardImg(s.role, s.card)}" alt="${CARD_NAME[s.card]}">` : `<img src="${img('back_' + s.role)}" alt="No card">`}<div><div class="r" style="color:${ROLE_COLOR[s.role]}">${ROLE_NAME[s.role].toUpperCase()}</div><div class="txt">${esc(s.text)}</div></div>`;
+      steps.appendChild(row);
+    });
+    if (L.event) { const row = el('div', 'st'); row.style.animationDelay = (lastShownStep === state.step ? 0 : 4 * 0.35) + 's'; row.innerHTML = `<img src="${img(EV_IMG[L.event.key])}" alt=""><div><div class="r" style="color:var(--gold)">NIGHT EVENT · ${EVENT_NAME[L.event.key].toUpperCase()}</div><div class="txt">${esc(L.event.text)}</div></div>`; steps.appendChild(row); }
+    if (L.lastOrders) { const row = el('div', 'st'); row.style.animationDelay = (lastShownStep === state.step ? 0 : 5 * 0.35) + 's'; row.innerHTML = `<img src="${img('mk_pressure')}" alt="" style="border-radius:50%"><div><div class="r">LAST ORDERS</div><div class="txt">${esc(L.lastOrders)}</div></div>`; steps.appendChild(row); }
+    p.appendChild(steps);
+    const dRev = L.after.rev - L.before.rev, dP = L.after.P - L.before.P;
+    p.appendChild(el('div', 'delta', `<span>Revenue $${L.before.rev} → $${L.after.rev} (${dRev >= 0 ? '+' : ''}${dRev})</span><span>Pressure ${L.before.P} → ${L.after.P} (${dP >= 0 ? '+' : ''}${dP})</span>`));
+    const nextLabel = state.result ? 'See the result' : (L.round % 2 === 1 ? `Play Round ${L.round + 1} (card B)` : (state.P >= SKIP_AT_UI() ? `Round ${L.round + 1}: planning skipped` : `Plan Round ${L.round + 1}`));
+    const btn = el('button', 'btn', esc(nextLabel)); btn.onclick = () => transition(state.step, 'continue');
+    p.appendChild(btn);
+    p.appendChild(el('div', 'note', 'Anyone can continue once the table has read the results.'));
+    lastShownStep = state.step;
+  } else if (state.phase === 'end') {
+    const r = state.result || { win: false, reason: '' };
+    const box = el('div', 'end', `<h2 class="${r.win ? 'win' : 'lose'}">${r.win ? 'You made it to closing' : 'Last call came early'}</h2><p>${esc(r.reason)}</p><div class="delta"><span>Revenue $${state.rev}</span><span>Pressure ${state.P}</span><span>Safe rides ${state.rides}</span></div>`);
+    const again = el('button', 'btn', 'Play again with the same seats'); again.onclick = () => transition(state.step, 'again');
+    const out = el('button', 'btn ghost', 'Back to the lobby'); out.onclick = () => transition(state.step, 'lobby');
+    box.append(again, out); p.appendChild(box);
+  }
+}
+function SKIP_AT_UI() { return 5; }
+
+function renderMine() {
+  const box = $('minePanel'); box.innerHTML = '';
+  const mine = myRoles();
+  if (!mine.length) { box.appendChild(el('div', 'note', 'You are watching this table. Take a role in the lobby to play.')); return; }
+  if (!mine.includes(activeRole)) activeRole = mine[0];
+  const role = activeRole;
+  const head = el('div', 'phase', `<span class="lbl" style="color:${ROLE_COLOR[role]}">YOUR ROLE</span><h2>${ROLE_NAME[role]}</h2>`);
+  box.appendChild(head);
+  if (mine.length > 1) { const tabs = el('div', 'roletabs'); mine.forEach(r => { const b = el('button', null, ROLE_NAME[r]); b.setAttribute('aria-pressed', r === role); b.onclick = () => { activeRole = r; render(); }; tabs.appendChild(b); }); box.appendChild(tabs); }
+  const planning = state.phase === 'plan';
+  let A = null, B = null, ready = false;
+  if (planning) { const d = getDraft(role); A = d.A; B = d.B; ready = d.ready; }
+  else if (state.plans && state.plans[role]) { A = state.plans[role].A; B = state.plans[role].B; }
+  // mat
+  const mat = el('div', 'mat'); mat.innerHTML = `<img class="matbg" src="${img('mat_' + role)}" alt="${ROLE_NAME[role]} player mat">`;
+  for (const [k, x] of [['A', 635], ['B', 1055]]) {
+    const v = k === 'A' ? A : B;
+    const s = el('button', 'slot' + (planning && activeSlot === k && !ready ? ' active' : ''));
+    s.style.left = (x / 1485 * 100) + '%'; s.style.top = (185 / 1050 * 100) + '%';
+    s.setAttribute('aria-label', `Slot ${k}${v ? ': ' + CARD_NAME[v.c] : ' (empty)'}`);
+    if (v) s.innerHTML = `<img src="${cardImg(role, v.c)}" alt="">`;
+    s.onclick = () => { if (planning) { activeSlot = k; render(); } else if (v) openZoom(cardImg(role, v.c)); };
+    mat.appendChild(s);
+    if (v && v.t != null && TARGETED[v.c]) { const t = el('img', 'slottok'); t.src = img(`tok_${role}_${v.t + 1}`); t.alt = `Seat ${v.t + 1}`; t.style.left = ((x + 157) / 1485 * 100) + '%'; t.style.top = (695 / 1050 * 100) + '%'; mat.appendChild(t); }
+    if (v) { const n = el('span', 'slotname', `${CARD_NAME[v.c].toUpperCase()}${v.t != null && TARGETED[v.c] ? ' → ' + (v.t + 1) : ''}`); n.style.left = ((x + 157) / 1485 * 100) + '%'; n.style.top = (640 / 1050 * 100) + '%'; mat.appendChild(n); }
+  }
+  box.appendChild(mat);
+  if (!planning) { box.appendChild(el('div', 'note', state.phase === 'reveal' ? 'Your locked cards for this cycle.' : '')); return; }
+  const d = getDraft(role);
+  // hand
+  box.appendChild(el('span', 'lbl', `YOUR DECK · TAP A CARD FOR SLOT ${activeSlot}`));
+  const hand = el('div', 'hand');
+  for (const [c, n] of Object.entries(DECKS[role])) {
+    const other = activeSlot === 'A' ? d.B : d.A;
+    const usedElsewhere = other && other.c === c ? 1 : 0;
+    const b = el('button', 'hc'); b.innerHTML = `<img src="${cardImg(role, c)}" alt="${CARD_NAME[c]}"><span class="n">×${n}</span>`;
+    b.disabled = ready || n - usedElsewhere <= 0; b.title = CARD_NAME[c];
+    b.onclick = () => pickCard(role, c); hand.appendChild(b);
+  }
+  box.appendChild(hand);
+  const cur = d[activeSlot];
+  if (cur && TARGETED[cur.c]) {
+    box.appendChild(el('span', 'lbl', `SLOT ${activeSlot}: WHICH SEAT?`));
+    const sp = el('div', 'seatpick'); const other = activeSlot === 'A' ? d.B : d.A;
+    CUST.forEach((nm, t) => {
+      const b = el('button', null, `${t + 1} · ${esc(nm)}<small>Intoxication ${state.cust[t].ix}</small>`);
+      b.setAttribute('aria-pressed', cur.t === t); b.disabled = ready || (other && TARGETED[other.c] && other.t === t);
+      b.onclick = () => pickSeat(role, t); sp.appendChild(b);
+    });
+    box.appendChild(sp);
+  }
+  const probs = planProblems(role, d.A, d.B);
+  if (!d.A || !d.B) probs.unshift(`Place ${!d.A && !d.B ? 'cards A and B' : !d.A ? 'card A' : 'card B'}. An empty slot plays nothing.`);
+  if (probs.length) box.appendChild(el('div', 'problems', probs.map(esc).join('<br>')));
+  const rr = el('div', 'readyrow');
+  const rb = el('button', 'btn' + (ready ? ' ghost' : ''), ready ? 'Change my plan' : 'Ready'); rb.onclick = () => toggleReady(role);
+  const cl = el('button', 'btn ghost small', `Clear slot ${activeSlot}`); cl.disabled = ready || !d[activeSlot]; cl.onclick = () => clearSlot(role, activeSlot);
+  rr.append(rb, cl); box.appendChild(rr);
+}
+
+function renderTeam() {
+  const t = $('team'); t.innerHTML = '';
+  for (const r of ROLES) {
+    let A = null, B = null, status = '';
+    if (state.phase === 'plan') { const p = fresh(plans[r]) ? plans[r] : null; A = p && p.A; B = p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">PLANNING</span>'; }
+    else if (state.plans && state.plans[r]) { A = state.plans[r].A; B = state.plans[r].B; }
+    const f = x => x ? `<b>${CARD_NAME[x.c]}</b>${x.t != null && TARGETED[x.c] ? ' → ' + (x.t + 1) : ''}` : '—';
+    const pw = state.powers && state.powers[r] ? ' · power used' : '';
+    const row = el('div', 'mate', `<span class="dot" style="background:${ROLE_COLOR[r]}"></span><div><div><b>${ROLE_NAME[r]}</b> <span class="note">${seats[r] ? esc(nameOf(seats[r])) : 'empty'}${pw}</span></div><div class="plan">A ${f(A)} · B ${f(B)}</div></div>${status}`);
+    t.appendChild(row);
+  }
+}
+function renderLog() {
+  const l = $('log'); const h = state.history || [];
+  l.innerHTML = h.length ? h.map(x => `<div><b>Round ${x.round}</b>${x.skipped ? ' (no planning)' : ''} · ${x.event ? EVENT_NAME[x.event] : '—'} · $${x.rev} · Pressure ${x.P}</div>`).join('') : '<div>Nothing yet. Round 1 is about to open.</div>';
+}
+
+function openZoom(src) { $('zoomImg').src = src; $('zoom').hidden = false; zoomOpen = true; }
+$('zoom').onclick = () => { $('zoom').hidden = true; zoomOpen = false; };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && zoomOpen) $('zoom').click(); });
+
+setInterval(() => { if (!state) return; tick(); if (state.phase === 'plan') tryLock(); }, 500);
+boot();
+})();
+</script>
+
+</body>
+</html>
