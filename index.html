@@ -543,7 +543,18 @@ function status(msg, warn) { const s = $('lobbyStatus'); s.innerHTML = warn ? `<
 function myName() { return ($('myName').value || '').trim().slice(0, 24); }
 function newCode() { return Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); }
 
+const BUILD = '20261020-160539';
+// If the browser served an old cached copy, fetch the live page and reload once when it is newer.
+async function freshnessCheck() {
+  try {
+    const r = await fetch(location.pathname + '?_=' + Date.now(), { cache: 'no-store' }); const t = await r.text();
+    const m = t.match(/const BUILD = '([^']+)'/); const live = m && m[1];
+    if (live && live !== BUILD && !location.search.includes('b=' + live)) { location.replace(location.pathname + '?b=' + live); return false; }
+  } catch (e) {}
+  return true;
+}
 function boot() {
+  freshnessCheck();
   if (typeof mqtt === 'undefined') { status('Could not load the connection library. Check your internet connection and reload.', true); return; }
   $('joinRow').hidden = false; $('myName').value = load('lc_name') || '';
   status('Type your name, then open a new table or join with a code.');
@@ -582,7 +593,7 @@ $('btnLeave').onclick = () => { if (!isHost) for (const r of ROLES) if (seats[r]
 
 function leave() { clearInterval(hbTimer); clearInterval(joinTimer); try { client && client.end(true); } catch (e) {} client = null; clients = []; subs = []; lastRev = -1; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
 function enterTable(c) { code = c; save('lc_code', c); $('joinRow').hidden = true; $('tableBox').hidden = false; $('tCode').textContent = c; $('hostNote').hidden = !isHost; }
-function setFrom(st) { state = st.main; seats = Object.assign({}, st.seats); plans = st.plans || {}; names = st.names || {}; render(); }
+function setFrom(st) { const g = $('netNote'); if (!isHost && st.build !== BUILD) { if (g) { g.textContent = 'The host is on a different version of this page. Host and players: reload the page (or open it again from the link) and rejoin.'; g.hidden = false; } } state = st.main; seats = Object.assign({}, st.seats); plans = st.plans || {}; names = st.names || {}; render(); }
 
 function onMessage(topic, buf) {
   let m; try { m = JSON.parse(buf.toString()); } catch (e) { return; }
@@ -597,7 +608,9 @@ function hostTable(c, resume) {
   status(resume ? `Reopening table ${c}…` : 'Opening a table…');
   isHost = true; code = c;
   connect(() => {
+    if (resume && resume.build !== BUILD) { resume.main = { v: 1, code: c, createdBy: uid, phase: 'lobby', step: (resume.main && resume.main.step || 0) + 1 }; resume.plans = {}; }
     store = resume || { main: { v: 1, code: c, createdBy: uid, phase: 'lobby', step: 0 }, seats: {}, plans: {}, names: {} };
+    store.build = BUILD;
     store.names[uid] = myName() || store.names[uid] || 'Host';
     sub(T(c).act); enterTable(c); publishState();
     status(`Table ${c} is open. Players join with this code.`);
@@ -748,7 +761,8 @@ function renderBoard() {
   const hitSeats = new Set();
   if (state.phase === 'reveal' && state.last) state.last.steps.forEach(s => { if (s.ok && s.t != null) hitSeats.add(s.t); });
   // customers
-  state.cust.forEach((c, i) => {
+  state.cust.forEach((c0, i) => {
+    const c = Object.assign({ id: i }, c0); // older hosts send no customer id: fall back to seat order
     const x = 400 + i * 530 + 15, y = 465 + 125;
     const btn = el('button', 'custcard' + (hitSeats.has(i) && lastShownStep !== state.step ? ' hit' : ''));
     btn.style.left = (x / W * 100) + '%'; btn.style.top = (y / H * 100) + '%'; btn.style.width = (470 / W * 100) + '%';
@@ -886,7 +900,7 @@ function renderMine() {
     box.appendChild(el('span', 'lbl', `SLOT ${activeSlot}: WHICH SEAT?`));
     const sp = el('div', 'seatpick'); const other = activeSlot === 'A' ? d.B : d.A;
     state.cust.forEach((cu, t) => {
-      const b = el('button', null, `${t + 1} · ${esc(CUST[cu.id])}<small>Intoxication ${cu.ix}</small>`);
+      const b = el('button', null, `${t + 1} · ${esc(CUST[cu.id ?? t])}<small>Intoxication ${cu.ix}</small>`);
       const oth = lock === 'B' ? A : other;
       b.setAttribute('aria-pressed', cur.t === t); b.disabled = ready || (oth && TARGETED[oth.c] && oth.t === t);
       b.onclick = () => pickSeat(role, t); sp.appendChild(b);
