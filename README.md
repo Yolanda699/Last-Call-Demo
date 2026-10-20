@@ -19,9 +19,9 @@ Art comes from the Last Call Figma file (exported to `img/`).
 - Everyone else opens the same link, types their name and the 4-letter code, and clicks **Join**.
 - Everyone picks a role, then anyone clicks **Start the night**.
 - If the host reloads, they type the same code and click **Join** to reopen the table (the game is saved on that device).
-- Players connect browser-to-browser. The free PeerJS service (0.peerjs.com) only introduces the devices;
-  no game data is stored online. Some strict school or office Wi-Fi networks block this kind of connection;
-  if players can't join, try a phone hotspot.
+- Devices talk through a free public message relay (HiveMQ, with EMQX as backup) over normal HTTPS ports,
+  so it works on phones, mobile data and school Wi-Fi. The game itself runs on the host's device.
+  The relay is public: don't put anything private in player names.
 
 ## Updating rules or art
 
