@@ -436,6 +436,15 @@ const pct = (x, y) => ({ left: (x / W * 100) + '%', top: (y / H * 100) + '%' });
 
 // ---------- peer-to-peer table (PeerJS). The device that opens the table holds the game. ----------
 const PREFIX = 'lastcall-iter4-';
+// STUN finds a direct route; TURN relays when phones are on mobile data or strict Wi-Fi.
+const PEER_OPTS = { debug: 1, config: { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+] } };
+let joinTimer = null, joinTries = 0;
 function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 let uid = load('lc_uid'); if (!uid) { uid = 'p' + Math.random().toString(36).slice(2, 10); save('lc_uid', uid); }
@@ -460,7 +469,7 @@ $('btnJoin').onclick = () => { if (!needName()) return; const c = $('joinCode').
 $('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
 $('btnLeave').onclick = () => { if (!isHost) for (const r of ROLES) if (seats[r] === uid) request({ type: 'seat', role: r, take: false }); setTimeout(leave, 150); };
 
-function leave() { clearTimeout(retryTimer); try { peer && peer.destroy(); } catch (e) {} peer = null; conns = []; hostConn = null; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
+function leave() { clearTimeout(retryTimer); clearTimeout(joinTimer); try { peer && peer.destroy(); } catch (e) {} peer = null; conns = []; hostConn = null; isHost = false; store = null; code = null; state = null; seats = {}; plans = {}; $('tableBox').hidden = true; $('joinRow').hidden = false; $('lobby').hidden = false; $('game').hidden = true; $('hud').hidden = true; status('Type your name, then open a new table or join with a code.'); }
 function enterTable(c) { code = c; save('lc_code', c); $('joinRow').hidden = true; $('tableBox').hidden = false; $('tCode').textContent = c; $('hostNote').hidden = !isHost; }
 
 function setFrom(st) { state = st.main; seats = Object.assign({}, st.seats); plans = st.plans || {}; names = st.names || {}; render(); }
@@ -469,12 +478,12 @@ function setFrom(st) { state = st.main; seats = Object.assign({}, st.seats); pla
 function hostTable(c, resume, tries = 0) {
   status(resume ? `Reopening table ${c}…` : 'Opening a table…');
   try { peer && peer.destroy(); } catch (e) {}
-  peer = new Peer(PREFIX + c);
+  peer = new Peer(PREFIX + c, PEER_OPTS);
   peer.on('open', () => {
     isHost = true;
     store = resume || { main: { v: 1, code: c, createdBy: uid, phase: 'lobby', step: 0 }, seats: {}, plans: {}, names: {} };
     store.names[uid] = myName() || store.names[uid] || 'Host';
-    save('lc_hostcode', c); enterTable(c); broadcast();
+    save('lc_hostcode', c); enterTable(c); broadcast(); status(`Table ${c} is open. Players join with this code.`);
   });
   peer.on('connection', conn => {
     conns.push(conn);
@@ -514,7 +523,7 @@ function applyTransition(s, kind) {
 function joinTable(c) {
   status(`Joining table ${c}…`);
   try { peer && peer.destroy(); } catch (e) {}
-  peer = new Peer();
+  peer = new Peer(PEER_OPTS); joinTries = 0;
   peer.on('open', () => connectHost(c));
   peer.on('error', e => {
     if (e.type === 'peer-unavailable') { if (code) { status('The table host is offline. Retrying…', true); retryTimer = setTimeout(() => connectHost(c), 3000); } else status(`No open table with code ${c}. The device that opened it must keep the page open.`, true); }
@@ -522,8 +531,16 @@ function joinTable(c) {
   });
 }
 function connectHost(c) {
+  try { hostConn && hostConn.close(); } catch (e) {}
+  joinTries++;
   hostConn = peer.connect(PREFIX + c, { reliable: true });
-  hostConn.on('open', () => { if (!code) enterTable(c); status('Connected.'); hostConn.send({ type: 'hello', name: myName() || load('lc_name') || 'Player', from: uid }); });
+  clearTimeout(joinTimer);
+  joinTimer = setTimeout(() => {
+    if (hostConn && hostConn.open) return;
+    status(joinTries < 2 ? `Still reaching table ${c}… trying again.` : `Can't reach table ${c}. Check that the host's page is still open. If you're on mobile data or a different Wi-Fi, try the same Wi-Fi as the host (or a phone hotspot). Still trying…`, joinTries >= 2);
+    connectHost(c);
+  }, 12000);
+  hostConn.on('open', () => { clearTimeout(joinTimer); if (!code) enterTable(c); status('Connected.'); hostConn.send({ type: 'hello', name: myName() || load('lc_name') || 'Player', from: uid }); });
   hostConn.on('data', m => { if (m && m.type === 'sync') setFrom(m.store); });
   hostConn.on('close', () => { if (!code) return; status('Lost the table host. Reconnecting…', true); clearTimeout(retryTimer); retryTimer = setTimeout(() => connectHost(c), 3000); });
 }
