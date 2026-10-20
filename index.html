@@ -100,11 +100,19 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
 .slot img{width:100%;display:block;border-radius:6px}
 .slottok{position:absolute;width:7.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%)}
 .slotname{position:absolute;font-family:var(--f-label);font-size:clamp(10px,1.2vw,14px);letter-spacing:.06em;color:var(--ink);background:rgba(247,241,230,.92);padding:1px 6px;border-radius:5px;transform:translateX(-50%);white-space:nowrap}
-.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.zoomacts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.zoombox{display:flex;flex-direction:column;align-items:center}
+.zoomhint{color:var(--cream);opacity:.7;font-size:13px;margin-top:10px;text-align:center}
+.mag{position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:rgba(20,22,38,.75);color:#fff;font-size:13px;line-height:24px;text-align:center;pointer-events:none}
 .hc{position:relative;padding:0;background:none;border-radius:7px;transition:transform .15s}
 .hc img{width:100%;display:block;border-radius:7px}
 .hc:hover:not(:disabled){transform:translateY(-3px)}
-.hc:disabled{opacity:.35;cursor:not-allowed}
+.hc.used{opacity:.45}
+.fcrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.fccard{display:grid;gap:6px;justify-items:center}
+.fccard img{width:100%;border-radius:8px;cursor:zoom-in}
+.slot.fixed{opacity:.75}
 .hc .n{position:absolute;right:4px;bottom:4px;background:var(--ink);color:var(--cream);font-family:var(--f-label);font-size:13px;padding:0 6px;border-radius:6px}
 .seatpick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .seatpick button{background:var(--panel-2);color:var(--text);padding:7px 6px;text-align:left;font-size:13px;line-height:1.2}
@@ -141,7 +149,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
 
 /* dialog */
 .zoom{position:fixed;inset:0;z-index:20;background:rgba(10,12,22,.82);display:grid;place-items:center;padding:20px}
-.zoom img{max-height:86vh;max-width:min(92vw,520px);border-radius:12px}
+.zoom img{width:min(92vw,520px,calc(78vh * 630 / 880));max-width:none;height:auto;border-radius:12px}
 details.rules{background:var(--panel);border-radius:14px;padding:10px 14px}
 details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.08em;font-size:17px}
 .rulesgrid{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:16px;margin-top:10px}
@@ -150,17 +158,17 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 @media (max-width:980px){.game{grid-template-columns:minmax(0,1fr)}.hero{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:620px){.seats{grid-template-columns:repeat(2,minmax(0,1fr))}.rulesgrid{grid-template-columns:minmax(0,1fr)}.stat b{font-size:18px}.brand small{display:none}}
 </style>
-<style>#relayNote{position:fixed;left:8px;bottom:6px;font:11px/1.3 system-ui,sans-serif;opacity:.65;z-index:50;pointer-events:none;color:inherit}</style>
+<style>#relayNote{position:static;padding:6px 16px 14px;font:11px/1.3 system-ui,sans-serif;opacity:.65;z-index:50;pointer-events:none;color:inherit}</style>
 </head>
 <body>
 
 
 <header class="top" id="top">
-  <div class="brand">LAST CALL <small>ONLINE PLAYTEST · ITERATION 4</small></div>
+  <div class="brand">LAST CALL <small>ONLINE PLAYTEST · ITERATION 5</small></div>
   <div class="spacer"></div>
   <div id="hud" hidden style="display:contents">
     <div class="stat"><span class="lbl">ROUND</span><b id="hRound">1/8</b></div>
-    <div class="stat"><span class="lbl">REVENUE · GOAL $28</span><b id="hRev">$0</b></div>
+    <div class="stat"><span class="lbl">REVENUE · GOAL $26 · FAMOUS $28</span><b id="hRev">$0</b></div>
     <div class="stat"><span class="lbl">PRESSURE · LOSE AT 8</span><div class="meter" id="hMeter"></div></div>
     <div class="timer" id="hTimer" aria-live="off"></div>
   </div>
@@ -170,7 +178,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
   <section class="lobby" id="lobby">
     <div class="hero">
       <div>
-        <span class="lbl">4-PLAYER CO-OP · 8 ROUNDS · RULES ITERATION 4</span>
+        <span class="lbl">4-PLAYER CO-OP · 8 ROUNDS · RULES ITERATION 5</span>
         <h1>Last Call</h1>
         <p>Play the mechanics together, each on your own device. No accounts needed: one person opens a table and shares the code. Cards, board and tokens are the real Figma art, and the rules run themselves.</p>
         <div id="lobbyStatus" class="note">Connecting to the table…</div>
@@ -201,13 +209,16 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
           <summary>RULES REMINDER</summary>
           <div class="rulesgrid">
             <ul>
-              <li><b>Plan</b> on rounds 1, 3, 5, 7: the timer is 60 · 60 · 45 · 30 seconds. Place card A (this round) and card B (next round). When the timer ends, plans lock.</li>
+              <li><b>Plan</b> on rounds 1, 3, 5, 7: the timer is 60 seconds. Place card A (this round) and card B (next round). When the timer ends, plans lock. <b>Played cards are discarded</b> – you play 8 of your 10 cards per night.</li>
+              <li><b>Bouncer – on the floor</b>: plans only card A, then picks card B at the start of the even round (30 seconds).</li>
+              <li><b>Check the Forecast</b>: the Manager sees the top 2 Night Events and picks one; the other goes to the bottom.</li>
+              <li><b>Customers</b>: 6 of 10 are dealt at random. Ride Home sends one home and the next customer takes the seat.</li>
               <li><b>Act</b>: Bartender first, then Server, Bouncer, Manager. Odd rounds play A, even rounds play B.</li>
               <li><b>Night Event</b>, then <b>last orders</b>: +1 Pressure per customer still at 4 (max +2).</li>
               <li>Reaching 4: +1 Pressure. A drink that would go above 4 is wasted. Cocktail can't go to the First Date.</li>
-              <li><b>Pressure 5+</b> when a planning round starts: no planning, everyone replays the same A and B.</li>
-              <li><b>Pressure 8</b>: you lose. After Round 8: win with <b>$28+</b> and nobody at 4.</li>
-              <li>Powers work once every 2 rounds and apply automatically.</li>
+              <li><b>Pressure 5+</b> when a planning round starts: silent planning – no talking, and only 30 seconds.</li>
+              <li><b>Pressure 8</b>: you lose. After Round 8: nobody may be at 4. Under <b>$26</b> you lose, <b>$26–27</b> the bar keeps going, <b>$28+</b> the bar becomes famous.</li>
+              <li>Bartender, Server and Manager powers work once every 2 rounds and apply automatically. 8 of the 14 Night Events happen each night.</li>
             </ul>
             <img src="img/drinkmenu.webp" alt="Drink Menu reference card" width="315" height="440">
           </div>
@@ -223,38 +234,43 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
     </div>
   </section>
 </main>
-<div class="zoom" id="zoom" hidden><img id="zoomImg" alt=""></div>
+<div class="zoom" id="zoom" hidden><div class="zoombox"><img id="zoomImg" alt=""><div class="zoomacts" id="zoomActs"></div><div class="zoomhint" id="zoomHint">Tap anywhere to close</div></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 <script>
-// ===== Last Call – Iteration 4 rules engine (pure, no DOM) =====
+// ===== Last Call – Iteration 5 rules engine (pure, no DOM) =====
 const ROLES = ['bar', 'ser', 'bou', 'man'];
 const ROLE_NAME = { bar: 'Bartender', ser: 'Server', bou: 'Bouncer', man: 'Manager' };
 const DECKS = {
   bar: { beer: 3, wine: 2, cocktail: 2, water: 1, df: 1, clean: 1 },
   ser: { beer: 2, wine: 2, cocktail: 1, water: 2, df: 2, clean: 1 },
-  bou: { calm: 4, ride: 3, water: 1, beer: 1, clean: 1 },
-  man: { ride: 3, calm: 2, water: 2, clean: 2, beer: 1 },
+  bou: { cover: 3, breakup: 3, ride: 3, clean: 1 },
+  man: { ride: 3, happy: 2, forecast: 2, comp: 2, clean: 1 },
 };
-const CARD_NAME = { beer: 'Beer', wine: 'Wine', cocktail: 'Cocktail', water: 'Water', df: 'Drink + Food', clean: 'Clean', calm: 'Calm', ride: 'Ride Home' };
-const TARGETED = { beer: 1, wine: 1, cocktail: 1, water: 1, df: 1, ride: 1 };
-const CUST = ['The Regular', 'Karaoke Star', 'First Date', 'Off-Duty Chef', 'Sports Fan', 'Tourist'];
-const EVENTS = ['argument', 'rush', 'drive', 'spilled', 'karaoke', 'inspection', 'trivia', 'tipper'];
-const EVENT_NAME = { argument: 'Argument', rush: 'Last Call Rush', drive: 'I Can Drive', spilled: 'Spilled Drinks', karaoke: 'Karaoke Encore', inspection: 'Surprise Inspection', trivia: 'Trivia Night', tipper: 'Big Tipper' };
-const PLAN_SECONDS = { 1: 60, 3: 60, 5: 45, 7: 30 };
-const GOAL = 28, LOSE_AT = 8, SKIP_AT = 5, ROUNDS = 8;
+const CARD_NAME = { beer: 'Beer', wine: 'Wine', cocktail: 'Cocktail', water: 'Water', df: 'Drink + Food', clean: 'Clean', ride: 'Ride Home', cover: 'Cover Charge', breakup: 'Break It Up', happy: 'Happy Hour', forecast: 'Check the Forecast', comp: 'Comp a Round' };
+const TARGETED = { beer: 1, wine: 1, cocktail: 1, water: 1, df: 1, ride: 1, comp: 1 };
+// Customer pool (id = index). Six are dealt at random; Ride Home draws the next one.
+const CUST = ['The Regular', 'Karaoke Star', 'First Date', 'Off-Duty Chef', 'Sports Fan', 'Tourist', 'The Lightweight', 'The Night Owl', 'The Big Spender', 'The Designated Driver'];
+const C = { REG: 0, KAR: 1, DATE: 2, CHEF: 3, FAN: 4, TOUR: 5, LIGHT: 6, OWL: 7, SPEND: 8, DD: 9 };
+const EVENTS = ['argument', 'rush', 'drive', 'spilled', 'karaoke', 'inspection', 'trivia', 'tipper', 'celebrity', 'critic', 'quiet', 'bachelorette', 'surge', 'gamenight'];
+const EVENT_NAME = { argument: 'Argument', rush: 'Last Call Rush', drive: 'I Can Drive', spilled: 'Spilled Drinks', karaoke: 'Karaoke Encore', inspection: 'Surprise Inspection', trivia: 'Trivia Night', tipper: 'Big Tipper', celebrity: 'Celebrity Visit', critic: 'Food Critic', quiet: 'Quiet Night', bachelorette: 'Bachelorette Party', surge: 'Rideshare Surge', gamenight: 'Game Night Final' };
+const PLAN_SECONDS = { 1: 60, 3: 60, 5: 60, 7: 60 }, SILENT_SECONDS = 30, BOUNCER_SECONDS = 30;
+const GOAL = 26, FAMOUS = 28, LOSE_AT = 8, SKIP_AT = 5, ROUNDS = 8;
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
-function seatName(t) { return `Seat ${t + 1} (${CUST[t]})`; }
+function shuffle(a, rng) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function custName(s, t) { return CUST[s.cust[t].id]; }
+function seatName(s, t) { return `Seat ${t + 1} (${custName(s, t)})`; }
+function remaining(s, role) { const out = {}; for (const [c, n] of Object.entries(DECKS[role])) out[c] = n - ((s.used && s.used[role] && s.used[role][c]) || 0); return out; }
 
 function newGame(code, createdBy, rng = Math.random) {
-  const deck = EVENTS.slice();
-  for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+  const pool = shuffle(CUST.map((_, i) => i), rng);
   return {
-    v: 1, gid: Math.floor(rng() * 1e9).toString(36), code, createdBy, phase: 'plan', round: 1, cycle: 1, step: 1,
-    P: 0, rev: 0, rides: 0, cust: CUST.map(() => ({ ix: 0, dr: 0 })),
-    deck, evIdx: 0, powers: { bar: false, ser: false, bou: false, man: false },
-    plans: null, skipped: false, planEndsAt: 0, last: null, history: [], result: null,
+    v: 5, gid: Math.floor(rng() * 1e9).toString(36), code, createdBy, phase: 'plan', round: 1, cycle: 1, step: 1,
+    P: 0, rev: 0, rides: 0, cust: pool.slice(0, 6).map(id => ({ id, ix: 0, dr: 0 })), pool: pool.slice(6),
+    deck: shuffle(EVENTS.slice(), rng), evIdx: 0, powers: { bar: false, ser: false, man: false },
+    used: { bar: {}, ser: {}, bou: {}, man: {} },
+    plans: null, silent: false, planEndsAt: 0, last: null, history: [], result: null,
   };
 }
 
@@ -265,11 +281,11 @@ function addP(s, n, notes, why) {
   if (s.P !== before) notes.push(`${n > 0 ? '+' : ''}${s.P - before} Pressure (${why})`);
 }
 
-// Raise a customer by n from a drink; triggers Karaoke (reach 3) and reaching 4.
+// Raise a customer by n; triggers Karaoke Star / Night Owl (reach 3) and reaching 4.
 function raise(s, t, n, notes) {
-  const c = s.cust[t]; const old = c.ix; c.ix = old + n;
-  if (t === 1 && old < 3 && c.ix >= 3) addP(s, 1, notes, 'Karaoke Star reached 3');
-  if (old < 4 && c.ix === 4) addP(s, 1, notes, `${CUST[t]} reached 4`);
+  const c = s.cust[t]; const old = c.ix; c.ix = Math.min(4, old + n);
+  if ((c.id === C.KAR || c.id === C.OWL) && old < 3 && c.ix >= 3) addP(s, 1, notes, `${CUST[c.id]} reached 3`);
+  if (old < 4 && c.ix === 4) addP(s, 1, notes, `${CUST[c.id]} reached 4`);
 }
 
 function act(s, role, card, t, rnd) {
@@ -277,74 +293,100 @@ function act(s, role, card, t, rnd) {
   const needT = TARGETED[card];
   if (needT && (t === null || t === undefined || t < 0 || t > 5)) return { ok: false, text: `${name} had no target – wasted.` };
   const c = needT ? s.cust[t] : null;
-  const who = needT ? seatName(t) : '';
+  const who = needT ? seatName(s, t) : '';
   if (card === 'beer' || card === 'wine' || card === 'cocktail') {
-    const n = card === 'cocktail' ? 2 : 1;
-    if (card === 'cocktail' && t === 2) return { ok: false, text: `Cocktail → ${who}: the First Date can't have Cocktails – wasted.` };
+    if (c.id === C.DD) return { ok: false, text: `${name} → ${who}: the Designated Driver can't have alcohol – wasted.` };
+    if (card === 'cocktail' && c.id === C.DATE) return { ok: false, text: `Cocktail → ${who}: the First Date can't have Cocktails – wasted.` };
+    const n = (card === 'cocktail' ? 2 : 1) + (c.id === C.LIGHT ? 1 : 0);
     if (c.ix + n > 4) return { ok: false, text: `${name} → ${who}: would push them above 4 (now ${c.ix}) – wasted.` };
     const old = c.ix;
     raise(s, t, n, notes);
-    s.rev += card === 'cocktail' ? 2 : 1;
+    const price = (card === 'cocktail' ? 2 : 1) + (c.id === C.SPEND && card !== 'cocktail' ? 1 : 0);
+    s.rev += price;
     if (card === 'cocktail') {
       if (role === 'bar' && !s.powers.bar) { s.powers.bar = true; notes.push('Bartender power: no Pressure from this Cocktail'); }
       else addP(s, 1, notes, 'Cocktail');
     }
     if (card === 'wine' && old <= 1) addP(s, -1, notes, 'Wine for a calm guest');
     c.dr += 1;
-    if (t === 4 && c.dr === 3) addP(s, 1, notes, "Sports Fan's 3rd drink");
+    if (c.id === C.FAN && c.dr === 3) addP(s, 1, notes, "Sports Fan's 3rd drink");
     rnd.alc++; rnd.drinks++;
-    return { ok: true, text: `${name} → ${who}: +$${card === 'cocktail' ? 2 : 1}, Intoxication ${old}→${c.ix}.` + (notes.length ? ' ' + notes.join('; ') + '.' : '') };
+    return { ok: true, text: `${name} → ${who}: +$${price}, Intoxication ${old}→${c.ix}.` + (notes.length ? ' ' + notes.join('; ') + '.' : '') };
   }
   if (card === 'water') {
     if (c.ix === 0) return { ok: false, text: `Water → ${who}: already at 0 – no effect.` };
-    const old = c.ix; c.ix = Math.max(0, c.ix - (t === 0 ? 2 : 1));
+    const old = c.ix; c.ix = Math.max(0, c.ix - (c.id === C.REG ? 2 : 1));
     return { ok: true, text: `Water → ${who}: Intoxication ${old}→${c.ix}.` };
   }
   if (card === 'df') {
     const old = c.ix; let red = 0; const extra = [];
-    if (t === 3) { red++; if (c.ix > 0) extra.push('Off-Duty Chef −1'); }
+    if (c.id === C.CHEF) { red++; if (c.ix > 0) extra.push('Off-Duty Chef −1'); }
     if (role === 'ser' && !s.powers.ser && c.ix > 0) { s.powers.ser = true; red++; extra.push('Server power −1'); }
-    c.ix = Math.max(0, c.ix - red); s.rev += 1; rnd.drinks++;
-    return { ok: true, text: `Drink + Food → ${who}: +$1, Intoxication ${old}→${c.ix}${extra.length ? ' (' + extra.join(', ') + ')' : ''}.` };
-  }
-  if (card === 'calm') {
-    if (s.P === 0) return { ok: false, text: 'Calm: Pressure already 0 – no effect.' };
-    let n = 1;
-    if (role === 'bou' && !s.powers.bou) { s.powers.bou = true; n = 2; notes.push('Bouncer power'); }
-    const old = s.P; s.P = Math.max(0, s.P - n);
-    return { ok: true, text: `Calm: Pressure ${old}→${s.P}${notes.length ? ' (' + notes[0] + ')' : ''}.` };
+    const price = 1 + (c.id === C.DD ? 1 : 0);
+    c.ix = Math.max(0, c.ix - red); s.rev += price; rnd.drinks++; rnd.df = true;
+    return { ok: true, text: `Drink + Food → ${who}: +$${price}, Intoxication ${old}→${c.ix}${extra.length ? ' (' + extra.join(', ') + ')' : ''}.` };
   }
   if (card === 'clean') {
     rnd.clean = true; const old = s.P; s.P = Math.max(0, s.P - 1);
     return { ok: true, text: `Clean: Pressure ${old}→${s.P}. Spilled Drinks is cancelled this round.` };
   }
   if (card === 'ride') {
-    const need = t === 5 ? 3 : 2;
+    const need = c.id === C.TOUR ? 3 : 2;
     if (c.ix < need) return { ok: false, text: `Ride Home → ${who}: needs Intoxication ${need}+ (now ${c.ix}) – wasted.` };
     let n = 2; const extra = [];
     if (role === 'man' && !s.powers.man) { s.powers.man = true; n = 3; extra.push('Manager power −1'); }
-    const old = s.P; s.P = Math.max(0, s.P - n); c.ix = 0; c.dr = 0; s.rides++;
-    return { ok: true, text: `Ride Home → ${who}: home safe, a new guest sits down. Pressure ${old}→${s.P}${extra.length ? ' (' + extra[0] + ')' : ''}.` };
+    const old = s.P; s.P = Math.max(0, s.P - n); s.rides++; rnd.ride = true;
+    const gone = c.id; s.pool.push(gone); const nid = s.pool.shift(); s.cust[t] = { id: nid, ix: 0, dr: 0 };
+    return { ok: true, text: `Ride Home → ${who}: home safe. ${CUST[nid]} takes the seat. Pressure ${old}→${s.P}${extra.length ? ' (' + extra[0] + ')' : ''}.` };
+  }
+  if (card === 'cover') {
+    const gain = s.P <= 2 ? 2 : 1; s.rev += gain;
+    return { ok: true, text: `Cover Charge: +$${gain} (Pressure is ${s.P}).` };
+  }
+  if (card === 'breakup') {
+    if (s.P === 0) return { ok: false, text: 'Break It Up: Pressure already 0 – no effect.' };
+    const rowdy = s.cust.some(x => x.ix >= 3); const old = s.P; s.P = Math.max(0, s.P - (rowdy ? 2 : 1));
+    return { ok: true, text: `Break It Up: Pressure ${old}→${s.P}${rowdy ? ' (someone is at 3+)' : ''}.` };
+  }
+  if (card === 'happy') {
+    const n = rnd.drinks; s.rev += n; rnd.happy = true;
+    return { ok: n > 0, text: n ? `Happy Hour: ${n} drink${n === 1 ? '' : 's'} this round – +$${n}. +1 Pressure at round end.` : 'Happy Hour: no drinks were served this round – +$0. +1 Pressure at round end.' };
+  }
+  if (card === 'forecast') {
+    rnd.forecast = true;
+    return { ok: true, text: 'Check the Forecast: the Manager looks at the top 2 Night Events and picks one.' };
+  }
+  if (card === 'comp') {
+    const old = c.ix, oldP = s.P, oldR = s.rev;
+    c.ix = Math.max(0, c.ix - 1); s.P = Math.max(0, s.P - 1); s.rev = Math.max(0, s.rev - 1);
+    return { ok: true, text: `Comp a Round → ${who}: Intoxication ${old}→${c.ix}, Pressure ${oldP}→${s.P}, $${oldR}→$${s.rev}.` };
   }
   return { ok: false, text: 'Unknown card.' };
 }
 
 function eventEffect(s, e, rnd) {
   const ix = s.cust.map(c => c.ix); const any = v => ix.some(x => x >= v); const has4 = ix.includes(4);
+  const kar = s.cust.find(c => c.id === C.KAR);
   switch (e) {
     case 'argument': return any(3) ? { dP: 2, why: 'a customer is at 3+' } : { dP: 1, why: 'nobody at 3+' };
     case 'rush': return rnd.alc < 2 ? { dP: 1, why: `only ${rnd.alc} alcoholic drink${rnd.alc === 1 ? '' : 's'} this round` } : { dP: 0, why: `${rnd.alc} alcoholic drinks served` };
     case 'drive': return has4 ? { dP: 2, why: 'a customer is at 4' } : (ix.includes(3) ? { dP: 1, why: 'a customer is at 3' } : { dP: 0, why: 'nobody at 3 or 4' });
-    case 'spilled': return rnd.clean ? { dP: 0, why: 'Clean was played' } : { dP: 2, why: 'nobody played Clean' };
-    case 'karaoke': return ix[1] >= 2 ? { dP: 2, why: 'Karaoke Star is at 2+' } : { dP: 1, why: 'Karaoke Star is below 2' };
+    case 'spilled': return rnd.clean ? { dP: 0, why: 'Clean was played' } : { dP: 1, why: 'nobody played Clean' };
+    case 'karaoke': return kar && kar.ix >= 2 ? { dP: 2, why: 'Karaoke Star is at 2+' } : { dP: 1, why: kar ? 'Karaoke Star is below 2' : 'Karaoke Star is not in the bar' };
     case 'inspection': return has4 ? { dP: 2, why: 'a customer is at 4' } : { dP: 1, why: 'nobody at 4' };
     case 'trivia': return { dRev: -Math.min(2, s.rev), dP: 0, why: 'the quiz crowd drinks tap water' };
     case 'tipper': return rnd.drinks >= 2 ? { dRev: 2, dP: 0, why: `${rnd.drinks} drinks served` } : { dP: 1, why: `only ${rnd.drinks} drink${rnd.drinks === 1 ? '' : 's'} served` };
+    case 'celebrity': return s.P <= 3 ? { dRev: 2, dP: 0, why: `Pressure is ${s.P}` } : { dP: 1, why: `Pressure is ${s.P}` };
+    case 'critic': return rnd.df ? { dRev: 2, dP: 0, why: 'Drink + Food was served' } : { dRev: -Math.min(1, s.rev), dP: 0, why: 'no Drink + Food this round' };
+    case 'quiet': return { dP: s.P > 0 ? -1 : 0, why: 'the room settles' };
+    case 'bachelorette': return { dP: 0, why: '', bach: true };
+    case 'surge': return any(3) && !rnd.ride ? { dP: 1, why: 'someone is at 3+ and nobody went home' } : { dP: 0, why: any(3) ? 'a guest went home this round' : 'nobody at 3+' };
+    case 'gamenight': return rnd.alc >= 3 ? { dRev: 2, dP: 0, why: `${rnd.alc} alcoholic drinks served` } : { dP: 0, why: `only ${rnd.alc} alcoholic drink${rnd.alc === 1 ? '' : 's'}` };
   }
   return { dP: 0, why: '' };
 }
 
-// Resolve one round. slot = 'A' (odd round) or 'B' (even round). Returns new state.
+// Resolve the four actions of a round. If the Manager checked the Forecast, pause for the pick.
 function resolveRound(S) {
   const s = clone(S);
   const slot = s.round % 2 === 1 ? 'A' : 'B';
@@ -358,78 +400,129 @@ function resolveRound(S) {
     const r = act(s, role, pl.c, pl.t, rnd);
     steps.push({ role, card: pl.c, t: pl.t ?? null, ok: r.ok, text: r.text });
   }
+  s.pending = { slot, rnd, steps, before };
+  if (rnd.forecast && s.P < LOSE_AT && s.evIdx + 1 < s.deck.length) {
+    s.fc = [s.deck[s.evIdx], s.deck[s.evIdx + 1]];
+    s.phase = 'forecast'; s.step++;
+    return s;
+  }
+  return finishRound(s);
+}
+
+// Manager picks which of the top two Night Events happens (0 or 1); the other goes to the bottom.
+function pickForecast(S, choice) {
+  const s = clone(S);
+  if (s.phase !== 'forecast') return null;
+  const i = s.evIdx; const keep = choice === 1 ? s.deck[i + 1] : s.deck[i]; const other = choice === 1 ? s.deck[i] : s.deck[i + 1];
+  s.deck.splice(i, 2, keep); s.deck.push(other);
+  s.pending.forecast = { chose: keep, bottom: other };
+  delete s.fc;
+  return finishRound(s);
+}
+
+function finishRound(s) {
+  const { slot, rnd, steps, before } = s.pending; const fcInfo = s.pending.forecast;
+  delete s.pending;
   let event = null, lastOrders = null;
   if (s.P < LOSE_AT) {
     const e = s.deck[s.evIdx]; s.evIdx++;
     const eff = eventEffect(s, e, rnd);
+    const parts = [];
+    if (eff.bach) {
+      const cand = s.cust.map((c, t) => ({ c, t })).filter(x => x.c.ix < 4);
+      if (cand.length) {
+        const top = Math.max(...cand.map(x => x.c.ix)); const pick = cand.find(x => x.c.ix === top);
+        const notes = []; const old = pick.c.ix; raise(s, pick.t, 1, notes);
+        eff.why = `${seatName(s, pick.t)} goes ${old}→${pick.c.ix}` + (notes.length ? '; ' + notes.join('; ') : '');
+      } else eff.why = 'everyone is already at 4';
+    }
     if (eff.dRev) s.rev = Math.max(0, s.rev + eff.dRev);
     if (eff.dP) s.P = Math.max(0, s.P + eff.dP);
-    const parts = [];
     if (eff.dRev) parts.push(`${eff.dRev > 0 ? '+' : '−'}$${Math.abs(eff.dRev)}`);
-    if (eff.dP) parts.push(`+${eff.dP} Pressure`);
-    event = { key: e, text: `${parts.length ? parts.join(', ') : 'Nothing happens'} – ${eff.why}.` };
+    if (eff.dP) parts.push(`${eff.dP > 0 ? '+' : '−'}${Math.abs(eff.dP)} Pressure`);
+    event = { key: e, text: `${parts.length ? parts.join(', ') + ' – ' : ''}${eff.why || 'nothing happens'}.` + (fcInfo ? ` (Manager chose this over ${EVENT_NAME[fcInfo.bottom]}.)` : '') };
     if (s.P < LOSE_AT) {
+      const extra = [];
+      if (rnd.happy) { s.P += 1; extra.push('+1 Pressure – Happy Hour'); }
       const n4 = s.cust.filter(c => c.ix === 4).length; const add = Math.min(2, n4);
       s.P += add;
-      lastOrders = add ? `+${add} Pressure – ${n4} customer${n4 === 1 ? '' : 's'} still at 4.` : 'Nobody at 4. No Pressure.';
+      lastOrders = (add ? `+${add} Pressure – ${n4} customer${n4 === 1 ? '' : 's'} still at 4.` : 'Nobody at 4. No Pressure.') + (extra.length ? ' ' + extra.join('; ') + '.' : '');
     }
   }
   if (s.P >= LOSE_AT) s.result = { win: false, reason: `Pressure reached ${LOSE_AT} in Round ${s.round}. The bar is shut down.` };
   else if (s.round === ROUNDS) {
     const at4 = s.cust.some(c => c.ix === 4);
-    if (s.rev >= GOAL && !at4) s.result = { win: true, reason: `$${s.rev} earned and every customer below 4.` };
-    else s.result = { win: false, reason: s.rev < GOAL ? `Only $${s.rev} – the goal was $${GOAL}.` : 'A customer is still at Intoxication 4.' };
+    if (at4) s.result = { win: false, reason: 'A customer is still at Intoxication 4.' };
+    else if (s.rev >= FAMOUS) s.result = { win: true, famous: true, reason: `$${s.rev} earned – a big success. Your bar is famous!` };
+    else if (s.rev >= GOAL) s.result = { win: true, reason: `$${s.rev} earned – the bar keeps operating normally. $${FAMOUS} would have made it famous.` };
+    else s.result = { win: false, reason: `Only $${s.rev} – the bar loses money. You needed $${GOAL}.` };
   }
-  s.last = { round: s.round, slot, skipped: !!s.skipped, steps, event, lastOrders, before, after: { P: s.P, rev: s.rev } };
-  s.history = (s.history || []).concat([{ round: s.round, P: s.P, rev: s.rev, event: event ? event.key : null, skipped: !!s.skipped }]);
+  s.last = { round: s.round, slot, steps, event, lastOrders, before, after: { P: s.P, rev: s.rev } };
+  s.history = (s.history || []).concat([{ round: s.round, P: s.P, rev: s.rev, event: event ? event.key : null, silent: s.round % 2 === 1 && !!s.silent, closed: !event }]);
   s.phase = 'reveal';
   s.step++;
   return s;
 }
 
-// From the reveal of round r, go on: returns new state (plan phase, or straight to the next resolution).
+// From the reveal of round r, go on: Bouncer picks card B live, or a new planning cycle starts.
 function nextRound(S, now) {
   let s = clone(S);
   if (s.result) { s.phase = 'end'; s.step++; return s; }
   s.round += 1;
-  s.skipped = false;
-  if (s.round % 2 === 0) return resolveRound(s); // B cards, no planning
-  // new planning cycle
-  s.cycle += 1; s.powers = { bar: false, ser: false, bou: false, man: false };
-  if (s.P >= SKIP_AT) { s.skipped = true; return resolveRound(s); } // replay same A and B
-  s.plans = null; s.phase = 'plan'; s.planEndsAt = now + PLAN_SECONDS[s.round] * 1000; s.step++;
+  if (s.round % 2 === 0) { s.phase = 'bplan'; s.planEndsAt = now + BOUNCER_SECONDS * 1000; s.step++; return s; }
+  s.cycle += 1; s.powers = { bar: false, ser: false, man: false };
+  s.silent = s.P >= SKIP_AT; // Pressure 5+: silent planning – no talking, 30 seconds
+  s.plans = null; s.phase = 'plan'; s.planEndsAt = now + (s.silent ? SILENT_SECONDS : PLAN_SECONDS[s.round]) * 1000; s.step++;
   return s;
 }
 
-// Freeze plan docs (by role) into the state, then resolve the odd round.
+const normPlan = x => (x && x.c ? { c: x.c, t: TARGETED[x.c] ? (Number.isInteger(x.t) ? x.t : null) : null } : null);
+function spend(s, role, x) { if (!x || !x.c) return null; const left = remaining(s, role)[x.c] || 0; if (left <= 0) return null; s.used[role][x.c] = (s.used[role][x.c] || 0) + 1; return x; }
+
+// Freeze plan docs (by role) into the state, then resolve the odd round. Played cards are discarded.
 function lockPlansAndResolve(S, planDocs) {
   const s = clone(S); s.plans = {};
   for (const role of ROLES) {
     const d = planDocs[role];
-    const ok = d && d.cycle === s.cycle && d.gid === s.gid;
-    const norm = x => (x && x.c ? { c: x.c, t: TARGETED[x.c] ? (Number.isInteger(x.t) ? x.t : null) : null } : null);
-    s.plans[role] = ok ? { A: norm(d.A), B: norm(d.B) } : { A: null, B: null };
+    const ok = d && d.cycle === s.cycle && d.gid === s.gid && d.stage === 'P';
+    const A = ok ? spend(s, role, normPlan(d.A)) : null;
+    const B = ok && role !== 'bou' ? spend(s, role, normPlan(d.B)) : null;
+    s.plans[role] = { A, B };
   }
   return resolveRound(s);
 }
 
-// Legality of a draft plan for one role (deck counts, distinct targets)
-function planProblems(role, A, B) {
-  const probs = []; const deck = DECKS[role];
-  if (A && B && A.c && B.c && A.c === B.c && (deck[A.c] || 0) < 2) probs.push(`You have only one ${CARD_NAME[A.c]}.`);
+// Bouncer's live card B for the even round.
+function lockBouncerAndResolve(S, doc) {
+  const s = clone(S);
+  const ok = doc && doc.cycle === s.cycle && doc.gid === s.gid && doc.stage === 'B' + s.round;
+  s.plans = s.plans || {}; s.plans.bou = s.plans.bou || { A: null, B: null };
+  let B = ok ? normPlan(doc.B) : null;
+  if (B && B.t != null && s.plans.bou.A && TARGETED[s.plans.bou.A.c] && s.plans.bou.A.t === B.t) B = null;
+  s.plans.bou.B = spend(s, 'bou', B);
+  return resolveRound(s);
+}
+
+// Legality of a draft plan for one role (cards left, distinct targets)
+function planProblems(s, role, A, B, live) {
+  const probs = []; const left = remaining(s, role);
+  for (const [k, x] of (live ? [['B', B]] : [['A', A], ['B', B]])) if (x && x.c && (left[x.c] || 0) < 1) probs.push(`Slot ${k}: no ${CARD_NAME[x.c]} left in your deck.`);
+  if (!live && A && B && A.c && B.c && A.c === B.c && (left[A.c] || 0) < 2) probs.push(`You have only one ${CARD_NAME[A.c]} left.`);
   if (A && B && A.c && B.c && TARGETED[A.c] && TARGETED[B.c] && A.t != null && A.t === B.t) probs.push('A and B can\'t target the same seat.');
   for (const [k, x] of [['A', A], ['B', B]]) if (x && x.c && TARGETED[x.c] && (x.t == null)) probs.push(`Slot ${k}: pick a seat.`);
   return probs;
 }
 
-if (typeof module !== 'undefined') module.exports = { ROLES, DECKS, newGame, resolveRound, nextRound, lockPlansAndResolve, planProblems, act, PLAN_SECONDS, GOAL };
+if (typeof module !== 'undefined') module.exports = { ROLES, DECKS, CUST, EVENTS, newGame, resolveRound, nextRound, lockPlansAndResolve, lockBouncerAndResolve, pickForecast, planProblems, act, remaining, PLAN_SECONDS, GOAL, FAMOUS };
 
 </script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
 const ROLE_COLOR = { bar: 'var(--r-bar)', ser: 'var(--r-ser)', bou: 'var(--r-bou)', man: 'var(--r-man)' };
-const EV_IMG = { argument: 'ev_argument', rush: 'ev_rush', drive: 'ev_drive', spilled: 'ev_spilled', karaoke: 'ev_karaoke', inspection: 'ev_inspection', trivia: 'ev_trivia', tipper: 'ev_tipper' };
+const EV_IMG = { argument: 'ev_argument', rush: 'ev_rush', drive: 'ev_drive', spilled: 'ev_spilled', karaoke: 'ev_karaoke', inspection: 'ev_inspection', trivia: 'ev_trivia', tipper: 'ev_tipper', celebrity: 'ev_celebrity', critic: 'ev_critic', quiet: 'ev_quiet', bachelorette: 'ev_bachelorette', surge: 'ev_surge', gamenight: 'ev_gamenight' };
+const custImg = id => img('cust_' + (id + 1));
+const curStage = () => state && state.phase === 'bplan' ? 'B' + state.round : 'P';
 const img = k => `img/${k}.webp`;
 const cardImg = (role, c) => img(`${role}_${c}`);
 const W = 3960, H = 2800;
@@ -458,7 +551,7 @@ function boot() {
 }
 function needName() { const n = myName(); if (!n) { status('Type your name first.', true); $('myName').focus(); return null; } save('lc_name', n); return n; }
 
-const VERSION = 'v3 · dual relay';
+const VERSION = 'v5 · iteration 5 rules';
 let clients = [], subs = [], readyFired = false, lastRev = -1;
 function anyConnected() { return clients.some(c => c.connected); }
 function relayInfo() { const n = clients.filter(c => c.connected).length; const g = $('relayNote'); if (g) g.textContent = `${VERSION} · relays connected: ${n}/${BROKERS.length}`; }
@@ -523,16 +616,18 @@ function hostApply(a, from) {
   if (a.type === 'hello') { if (a.name) store.names[from] = String(a.name).slice(0, 24); return true; }
   if (a.type === 'seat') { const cur = store.seats[a.role]; if (!ROLES.includes(a.role)) return false;
     if (a.take) { if (cur && cur !== from) return false; store.seats[a.role] = from; } else if (cur === from) delete store.seats[a.role]; return true; }
-  if (a.type === 'plan') { if (store.seats[a.role] !== from || !store.main || store.main.phase !== 'plan') return false; store.plans[a.role] = a.body; return true; }
-  if (a.type === 'tr') { const s = store.main; if (s.step !== a.step) return false; const n = applyTransition(s, a.kind); if (!n) return false; store.main = n; return true; }
+  if (a.type === 'plan') { const ph = store.main && store.main.phase; if (store.seats[a.role] !== from || !(ph === 'plan' || (ph === 'bplan' && a.role === 'bou'))) return false; store.plans[a.role] = a.body; return true; }
+  if (a.type === 'tr') { const s = store.main; if (s.step !== a.step) return false; if (a.kind === 'pick' && store.seats.man !== from) return false; const n = applyTransition(s, a.kind, a.arg); if (!n) return false; store.main = n; return true; }
   return false;
 }
-function applyTransition(s, kind) {
+function applyTransition(s, kind, arg) {
   const now = Date.now();
   if (kind === 'start' || kind === 'again') { if (!ROLES.every(r => store.seats[r])) return null; const g = newGame(s.code || code, s.createdBy); g.planEndsAt = now + PLAN_SECONDS[1] * 1000; g.step = (s.step || 0) + 1; return g; }
   if (kind === 'lobby') return { v: 1, code: s.code || code, createdBy: s.createdBy, phase: 'lobby', step: s.step + 1 };
   if (kind === 'continue' && s.phase === 'reveal') return nextRound(s, now);
   if (kind === 'lock' && s.phase === 'plan') return lockPlansAndResolve(s, store.plans);
+  if (kind === 'lockB' && s.phase === 'bplan') return lockBouncerAndResolve(s, store.plans.bou);
+  if (kind === 'pick' && s.phase === 'forecast') return pickForecast(s, arg === 1 ? 1 : 0);
   return null;
 }
 
@@ -555,13 +650,15 @@ function request(a) {
   else if (client && client.connected && code) client.publish(T(code).act, JSON.stringify(Object.assign({}, a, { from: uid })), { qos: 1 });
   else status('Not connected right now. Reconnecting…', true);
 }
-function transition(step, kind) { request({ type: 'tr', step, kind }); }
+function transition(step, kind, arg) { request({ type: 'tr', step, kind, arg }); }
 function setSeat(role, take) { request({ type: 'seat', role, take: !!take }); }
 const nameOf = id => (names[id] || 'Player') + (id === uid ? ' (you)' : '');
 $('btnStart').onclick = () => transition(state.step, 'start');
 
 function tryLock() {
-  if (!isHost || !state || state.phase !== 'plan') return;
+  if (!isHost || !state) return;
+  if (state.phase === 'bplan') { if (!(fresh(plans.bou) && plans.bou.ready) && Date.now() < state.planEndsAt + 300) return; transition(state.step, 'lockB'); return; }
+  if (state.phase !== 'plan') return;
   const all = ROLES.every(r => fresh(plans[r]) && plans[r].ready);
   if (!all && Date.now() < state.planEndsAt + 300) return;
   transition(state.step, 'lock');
@@ -569,11 +666,13 @@ function tryLock() {
 
 // ---------- plan drafting ----------
 function myRoles() { return ROLES.filter(r => seats[r] === uid); }
-function fresh(p) { return !!(p && state && p.cycle === state.cycle && p.gid === state.gid); }
+function fresh(p) { return !!(p && state && p.cycle === state.cycle && p.gid === state.gid && p.stage === curStage()); }
 function getDraft(role) {
   const p = plans[role];
-  if (!draft[role] || draft[role].cycle !== state.cycle || draft[role].gid !== state.gid) {
-    draft[role] = fresh(p) ? { gid: state.gid, cycle: state.cycle, A: p.A || null, B: p.B || null, ready: !!p.ready } : { gid: state.gid, cycle: state.cycle, A: null, B: null, ready: false };
+  const st = curStage();
+  if (!draft[role] || draft[role].cycle !== state.cycle || draft[role].gid !== state.gid || draft[role].stage !== st) {
+    draft[role] = fresh(p) ? { gid: state.gid, cycle: state.cycle, stage: st, A: p.A || null, B: p.B || null, ready: !!p.ready } : { gid: state.gid, cycle: state.cycle, stage: st, A: null, B: null, ready: false };
+    if (st !== 'P') draft[role].A = (state.plans && state.plans[role] && state.plans[role].A) || null;
   }
   return draft[role];
 }
@@ -581,7 +680,7 @@ let saveTimers = {};
 function pushDraft(role) {
   clearTimeout(saveTimers[role]);
   saveTimers[role] = setTimeout(() => {
-    const d = draft[role]; const body = { gid: d.gid, cycle: d.cycle, A: d.A, B: d.B, ready: !!d.ready, uid };
+    const d = draft[role]; const body = { gid: d.gid, cycle: d.cycle, stage: d.stage, A: d.A, B: d.B, ready: !!d.ready, uid };
     request({ type: 'plan', role, body });
   }, 200);
 }
@@ -591,15 +690,17 @@ function pickCard(role, c) {
   const other = activeSlot === 'A' ? 'B' : 'A';
   const keepT = d[activeSlot] && TARGETED[c] && d[activeSlot].t != null && !(d[other] && d[other].t === d[activeSlot].t) ? d[activeSlot].t : null;
   d[activeSlot] = { c, t: TARGETED[c] ? keepT : null };
-  if (!TARGETED[c] && !d[other]) activeSlot = other;
+  if (!TARGETED[c] && !d[other] && !lockedSlot(role)) activeSlot = other;
   pushDraft(role); render();
 }
 function pickSeat(role, t) {
   const d = getDraft(role); if (d.ready || !d[activeSlot]) return;
   d[activeSlot].t = t; pushDraft(role);
-  const other = activeSlot === 'A' ? 'B' : 'A'; if (!d[other]) activeSlot = other;
+  const other = activeSlot === 'A' ? 'B' : 'A'; if (!d[other] && !lockedSlot(role)) activeSlot = other;
   render();
 }
+// Bouncer: plans only A in planning rounds; picks only B live.
+function lockedSlot(role) { if (role !== 'bou' || !state) return null; return state.phase === 'bplan' ? 'B' : 'A'; }
 function clearSlot(role, k) { const d = getDraft(role); if (d.ready) return; d[k] = null; activeSlot = k; pushDraft(role); render(); }
 function toggleReady(role) { const d = getDraft(role); d.ready = !d.ready; pushDraft(role); render(); }
 
@@ -634,7 +735,7 @@ function renderHud() {
 }
 function tick() {
   const t = $('hTimer');
-  if (state && state.phase === 'plan') { const s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)); t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.className = 'timer' + (s <= 10 ? ' hot' : ''); }
+  if (state && (state.phase === 'plan' || state.phase === 'bplan')) { const s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)); t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.className = 'timer' + (s <= 10 ? ' hot' : ''); }
   else t.textContent = '';
 }
 
@@ -651,20 +752,20 @@ function renderBoard() {
     const x = 400 + i * 530 + 15, y = 465 + 125;
     const btn = el('button', 'custcard' + (hitSeats.has(i) && lastShownStep !== state.step ? ' hit' : ''));
     btn.style.left = (x / W * 100) + '%'; btn.style.top = (y / H * 100) + '%'; btn.style.width = (470 / W * 100) + '%';
-    btn.setAttribute('aria-label', `${CUST[i]}, Intoxication ${c.ix}`);
-    btn.innerHTML = `<img src="${img('cust_' + (i + 1))}" alt="">`;
+    btn.setAttribute('aria-label', `Seat ${i + 1}: ${CUST[c.id]}, Intoxication ${c.ix}`);
+    btn.innerHTML = `<img src="${custImg(c.id)}" alt="">`;
     const mk = el('img', 'ix'); mk.src = img('mk_intox'); mk.alt = ''; mk.style.left = ((91 + 112 * c.ix) / 630 * 100) + '%'; mk.style.top = (684 / 880 * 100) + '%'; btn.appendChild(mk);
-    if (i === 4) btn.appendChild(el('span', 'drinks', `DRINKS ${c.dr}`));
-    btn.onclick = () => openZoom(img('cust_' + (i + 1)));
+    if (c.id === 4) btn.appendChild(el('span', 'drinks', `DRINKS ${c.dr}`));
+    btn.onclick = () => openZoom(custImg(c.id));
     b.appendChild(btn);
   });
   // target tokens of the slot being played next
-  if (state.phase === 'plan' || state.phase === 'reveal') {
-    const slot = state.phase === 'plan' ? 'A' : (state.last ? state.last.slot : 'A');
+  if (['plan', 'reveal', 'bplan', 'forecast'].includes(state.phase)) {
+    const slot = state.phase === 'plan' ? 'A' : state.phase === 'bplan' ? 'B' : state.phase === 'forecast' ? (state.round % 2 ? 'A' : 'B') : (state.last ? state.last.slot : 'A');
     const bySeat = {};
     for (const r of ROLES) {
-      let p = state.phase === 'plan' ? (fresh(plans[r]) ? plans[r][slot] : null) : (state.plans && state.plans[r] ? state.plans[r][slot] : null);
-      if (state.phase === 'plan' && myRoles().includes(r) && draft[r] && draft[r].cycle === state.cycle && draft[r].gid === state.gid) p = draft[r][slot];
+      let p = state.phase === 'plan' || (state.phase === 'bplan' && r === 'bou') ? (fresh(plans[r]) ? plans[r][slot] : null) : (state.plans && state.plans[r] ? state.plans[r][slot] : null);
+      if ((state.phase === 'plan' || (state.phase === 'bplan' && r === 'bou')) && myRoles().includes(r) && draft[r] && draft[r].cycle === state.cycle && draft[r].gid === state.gid && draft[r].stage === curStage()) p = draft[r][slot];
       if (p && p.t != null && TARGETED[p.c]) (bySeat[p.t] = bySeat[p.t] || []).push(r);
     }
     for (const [t, rs] of Object.entries(bySeat)) {
@@ -688,12 +789,27 @@ function renderPhase() {
   if (state.phase === 'plan') {
     const ready = ROLES.filter(r => fresh(plans[r]) && plans[r].ready).length;
     p.appendChild(el('div', 'phase', `<h2>Plan · Round ${state.round}</h2><span class="pill wait">${ready}/4 READY</span>`));
-    p.appendChild(el('div', 'note', `Talk it through and place card A (Round ${state.round}) and card B (Round ${state.round + 1}). Plans lock when the timer ends or when all four are ready. Targets on the board show everyone's card A.`));
+    if (state.silent) p.appendChild(el('div', 'banner', `Pressure ${state.P}: silent planning. No talking, no pointing – 30 seconds. Teammates' cards still show on the board.`));
+    p.appendChild(el('div', 'note', `${state.silent ? 'Without talking, place' : 'Talk it through and place'} card A (Round ${state.round}) and card B (Round ${state.round + 1}). Plans lock when the timer ends or when all four are ready. Targets on the board show everyone's card A.`));
+  } else if (state.phase === 'bplan') {
+    const ready = fresh(plans.bou) && plans.bou.ready;
+    p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Bouncer on the floor</h2><span class="pill ${ready ? 'go' : 'wait'}">${ready ? 'READY' : 'CHOOSING'}</span>`));
+    p.appendChild(el('div', 'note', `Everyone else's card B is locked. The Bouncer looks at the room and picks card B now. Round ${state.round} plays when they're ready or the timer ends.`));
+  } else if (state.phase === 'forecast') {
+    p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Check the Forecast</h2><span class="pill wait">MANAGER PICKS</span>`));
+    const isMan = myRoles().includes('man');
+    p.appendChild(el('div', 'note', isMan ? 'Pick tonight\'s Night Event. The other one goes to the bottom of the deck.' : 'The Manager is looking at the top 2 Night Events and picking one.'));
+    const row = el('div', 'fcrow');
+    (state.fc || []).forEach((k, i) => { const b = el('div', 'fccard'); b.innerHTML = `<img src="${img(EV_IMG[k])}" alt="${EVENT_NAME[k]}">`; b.querySelector('img').onclick = () => openZoom(img(EV_IMG[k]), isMan ? [[`Use ${EVENT_NAME[k]}`, () => transition(state.step, 'pick', i)], ['Close', () => {}, true]] : null);
+      if (isMan) { const go = el('button', 'btn small', `Use ${esc(EVENT_NAME[k])}`); go.onclick = () => transition(state.step, 'pick', i); b.appendChild(go); } row.appendChild(b); });
+    p.appendChild(row);
+    const steps = el('div', 'steps');
+    (state.pending ? state.pending.steps : []).forEach(s => { const r = el('div', 'st' + (s.ok ? '' : ' bad')); r.style.animation = 'none'; r.innerHTML = `${s.card ? `<img src="${cardImg(s.role, s.card)}" alt="${CARD_NAME[s.card]}">` : `<img src="${img('back_' + s.role)}" alt="No card">`}<div><div class="r" style="color:${ROLE_COLOR[s.role]}">${ROLE_NAME[s.role].toUpperCase()}</div><div class="txt">${esc(s.text)}</div></div>`; steps.appendChild(r); });
+    p.appendChild(steps);
   } else if (state.phase === 'reveal' && state.last) {
     const L = state.last;
-    const head = el('div', 'phase', `<h2>Round ${L.round} · card ${L.slot}</h2>${state.result ? `<span class="pill ${state.result.win ? 'go' : 'bad'}">${state.result.win ? 'YOU WIN' : 'GAME OVER'}</span>` : ''}`);
+    const head = el('div', 'phase', `<h2>Round ${L.round} · card ${L.slot}</h2>${state.result ? `<span class="pill ${state.result.win ? 'go' : 'bad'}">${state.result.famous ? 'FAMOUS BAR' : state.result.win ? 'YOU WIN' : 'GAME OVER'}</span>` : ''}`);
     p.appendChild(head);
-    if (L.skipped) p.appendChild(el('div', 'banner', `Pressure was ${L.before.P} when planning should start – planning skipped. Everyone replayed the same A and B.`));
     const steps = el('div', 'steps');
     L.steps.forEach((s, i) => {
       const row = el('div', 'st' + (s.ok ? '' : ' bad'));
@@ -706,14 +822,14 @@ function renderPhase() {
     p.appendChild(steps);
     const dRev = L.after.rev - L.before.rev, dP = L.after.P - L.before.P;
     p.appendChild(el('div', 'delta', `<span>Revenue $${L.before.rev} → $${L.after.rev} (${dRev >= 0 ? '+' : ''}${dRev})</span><span>Pressure ${L.before.P} → ${L.after.P} (${dP >= 0 ? '+' : ''}${dP})</span>`));
-    const nextLabel = state.result ? 'See the result' : (L.round % 2 === 1 ? `Play Round ${L.round + 1} (card B)` : (state.P >= SKIP_AT_UI() ? `Round ${L.round + 1}: planning skipped` : `Plan Round ${L.round + 1}`));
+    const nextLabel = state.result ? 'See the result' : (L.round % 2 === 1 ? `Round ${L.round + 1}: Bouncer picks card B` : (state.P >= SKIP_AT_UI() ? `Plan Round ${L.round + 1} – silent` : `Plan Round ${L.round + 1}`));
     const btn = el('button', 'btn', esc(nextLabel)); btn.onclick = () => transition(state.step, 'continue');
     p.appendChild(btn);
     p.appendChild(el('div', 'note', 'Anyone can continue once the table has read the results.'));
     lastShownStep = state.step;
   } else if (state.phase === 'end') {
     const r = state.result || { win: false, reason: '' };
-    const box = el('div', 'end', `<h2 class="${r.win ? 'win' : 'lose'}">${r.win ? 'You made it to closing' : 'Last call came early'}</h2><p>${esc(r.reason)}</p><div class="delta"><span>Revenue $${state.rev}</span><span>Pressure ${state.P}</span><span>Safe rides ${state.rides}</span></div>`);
+    const box = el('div', 'end', `<h2 class="${r.win ? 'win' : 'lose'}">${r.famous ? 'The famous bar in town' : r.win ? 'You made it to closing' : 'Last call came early'}</h2><p>${esc(r.reason)}</p><div class="delta"><span>Revenue $${state.rev}</span><span>Pressure ${state.P}</span><span>Safe rides ${state.rides}</span></div>`);
     const again = el('button', 'btn', 'Play again with the same seats'); again.onclick = () => transition(state.step, 'again');
     const out = el('button', 'btn ghost', 'Back to the lobby'); out.onclick = () => transition(state.step, 'lobby');
     box.append(again, out); p.appendChild(box);
@@ -730,50 +846,57 @@ function renderMine() {
   const head = el('div', 'phase', `<span class="lbl" style="color:${ROLE_COLOR[role]}">YOUR ROLE</span><h2>${ROLE_NAME[role]}</h2>`);
   box.appendChild(head);
   if (mine.length > 1) { const tabs = el('div', 'roletabs'); mine.forEach(r => { const b = el('button', null, ROLE_NAME[r]); b.setAttribute('aria-pressed', r === role); b.onclick = () => { activeRole = r; render(); }; tabs.appendChild(b); }); box.appendChild(tabs); }
-  const planning = state.phase === 'plan';
+  const planning = state.phase === 'plan' || (state.phase === 'bplan' && role === 'bou');
+  const lock = lockedSlot(role); if (planning && lock) activeSlot = lock;
   let A = null, B = null, ready = false;
-  if (planning) { const d = getDraft(role); A = d.A; B = d.B; ready = d.ready; }
+  if (planning) { const d = getDraft(role); A = d.A; B = d.B; ready = d.ready; if (lock === 'A') B = null; if (lock === 'B') A = (state.plans && state.plans.bou && state.plans.bou.A) || null; }
   else if (state.plans && state.plans[role]) { A = state.plans[role].A; B = state.plans[role].B; }
   // mat
   const mat = el('div', 'mat'); mat.innerHTML = `<img class="matbg" src="${img('mat_' + role)}" alt="${ROLE_NAME[role]} player mat">`;
   for (const [k, x] of [['A', 635], ['B', 1055]]) {
     const v = k === 'A' ? A : B;
-    const s = el('button', 'slot' + (planning && activeSlot === k && !ready ? ' active' : ''));
+    const s = el('button', 'slot' + (planning && activeSlot === k && !ready ? ' active' : '') + (planning && lock && lock !== k ? ' fixed' : ''));
     s.style.left = (x / 1485 * 100) + '%'; s.style.top = (185 / 1050 * 100) + '%';
     s.setAttribute('aria-label', `Slot ${k}${v ? ': ' + CARD_NAME[v.c] : ' (empty)'}`);
     if (v) s.innerHTML = `<img src="${cardImg(role, v.c)}" alt="">`;
-    s.onclick = () => { if (planning) { activeSlot = k; render(); } else if (v) openZoom(cardImg(role, v.c)); };
+    s.onclick = () => { if (planning && lock && lock !== k) { if (v) openZoom(cardImg(role, v.c)); return; } if (planning && !(activeSlot !== k || !v)) openZoom(cardImg(role, v.c)); else if (planning) { activeSlot = k; render(); } else if (v) openZoom(cardImg(role, v.c)); };
     mat.appendChild(s);
+    if (planning && lock === 'A' && k === 'B') { const n = el('span', 'slotname', 'LIVE PICK'); n.style.left = ((x + 157) / 1485 * 100) + '%'; n.style.top = (420 / 1050 * 100) + '%'; mat.appendChild(n); }
     if (v && v.t != null && TARGETED[v.c]) { const t = el('img', 'slottok'); t.src = img(`tok_${role}_${v.t + 1}`); t.alt = `Seat ${v.t + 1}`; t.style.left = ((x + 157) / 1485 * 100) + '%'; t.style.top = (695 / 1050 * 100) + '%'; mat.appendChild(t); }
     if (v) { const n = el('span', 'slotname', `${CARD_NAME[v.c].toUpperCase()}${v.t != null && TARGETED[v.c] ? ' → ' + (v.t + 1) : ''}`); n.style.left = ((x + 157) / 1485 * 100) + '%'; n.style.top = (640 / 1050 * 100) + '%'; mat.appendChild(n); }
   }
   box.appendChild(mat);
-  if (!planning) { box.appendChild(el('div', 'note', state.phase === 'reveal' ? 'Your locked cards for this cycle.' : '')); return; }
+  if (!planning) { box.appendChild(el('div', 'note', state.phase === 'reveal' ? 'Your locked cards for this cycle.' : state.phase === 'bplan' ? 'Your card B is locked. The Bouncer is choosing theirs.' : state.phase === 'forecast' ? (role === 'man' ? 'Pick a Night Event above.' : 'Waiting for the Manager.') : ''));
+    const lf = remaining(state, role); box.appendChild(el('div', 'note', 'Left in your deck: ' + Object.entries(lf).map(([c, n]) => `${CARD_NAME[c]} ×${n}`).join(' · '))); return; }
   const d = getDraft(role);
   // hand
   box.appendChild(el('span', 'lbl', `YOUR DECK · TAP A CARD FOR SLOT ${activeSlot}`));
   const hand = el('div', 'hand');
-  for (const [c, n] of Object.entries(DECKS[role])) {
-    const other = activeSlot === 'A' ? d.B : d.A;
+  const leftNow = remaining(state, role);
+  for (const [c, n] of Object.entries(leftNow)) {
+    const other = lock ? null : (activeSlot === 'A' ? d.B : d.A);
     const usedElsewhere = other && other.c === c ? 1 : 0;
-    const b = el('button', 'hc'); b.innerHTML = `<img src="${cardImg(role, c)}" alt="${CARD_NAME[c]}"><span class="n">×${n}</span>`;
-    b.disabled = ready || n - usedElsewhere <= 0; b.title = CARD_NAME[c];
-    b.onclick = () => pickCard(role, c); hand.appendChild(b);
+    const b = el('button', 'hc'); b.innerHTML = `<img src="${cardImg(role, c)}" alt="${CARD_NAME[c]}"><span class="mag" aria-hidden="true">⌕</span><span class="n">×${n}</span>`;
+    const can = !ready && n - usedElsewhere > 0; b.classList.toggle('used', !can); b.title = CARD_NAME[c] + ' – tap to read';
+    b.onclick = () => openZoom(cardImg(role, c), can ? [[`Put in slot ${activeSlot}`, () => pickCard(role, c)], ['Close', () => {}, true]] : [['Close', () => {}, true]]); hand.appendChild(b);
   }
   box.appendChild(hand);
   const cur = d[activeSlot];
   if (cur && TARGETED[cur.c]) {
     box.appendChild(el('span', 'lbl', `SLOT ${activeSlot}: WHICH SEAT?`));
     const sp = el('div', 'seatpick'); const other = activeSlot === 'A' ? d.B : d.A;
-    CUST.forEach((nm, t) => {
-      const b = el('button', null, `${t + 1} · ${esc(nm)}<small>Intoxication ${state.cust[t].ix}</small>`);
-      b.setAttribute('aria-pressed', cur.t === t); b.disabled = ready || (other && TARGETED[other.c] && other.t === t);
+    state.cust.forEach((cu, t) => {
+      const b = el('button', null, `${t + 1} · ${esc(CUST[cu.id])}<small>Intoxication ${cu.ix}</small>`);
+      const oth = lock === 'B' ? A : other;
+      b.setAttribute('aria-pressed', cur.t === t); b.disabled = ready || (oth && TARGETED[oth.c] && oth.t === t);
       b.onclick = () => pickSeat(role, t); sp.appendChild(b);
     });
     box.appendChild(sp);
   }
-  const probs = planProblems(role, d.A, d.B);
-  if (!d.A || !d.B) probs.unshift(`Place ${!d.A && !d.B ? 'cards A and B' : !d.A ? 'card A' : 'card B'}. An empty slot plays nothing.`);
+  const probs = lock === 'A' ? planProblems(state, role, d.A, null) : lock === 'B' ? planProblems(state, role, A, d.B, true) : planProblems(state, role, d.A, d.B);
+  if (lock === 'A' && !d.A) probs.unshift('Place card A. You pick card B at the start of the next round.');
+  else if (lock === 'B' && !d.B) probs.unshift('Pick card B for this round. An empty slot plays nothing.');
+  else if (!lock && (!d.A || !d.B)) probs.unshift(`Place ${!d.A && !d.B ? 'cards A and B' : !d.A ? 'card A' : 'card B'}. An empty slot plays nothing.`);
   if (probs.length) box.appendChild(el('div', 'problems', probs.map(esc).join('<br>')));
   const rr = el('div', 'readyrow');
   const rb = el('button', 'btn' + (ready ? ' ghost' : ''), ready ? 'Change my plan' : 'Ready'); rb.onclick = () => toggleReady(role);
@@ -785,9 +908,10 @@ function renderTeam() {
   const t = $('team'); t.innerHTML = '';
   for (const r of ROLES) {
     let A = null, B = null, status = '';
-    if (state.phase === 'plan') { const p = fresh(plans[r]) ? plans[r] : null; A = p && p.A; B = p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">PLANNING</span>'; }
+    if (state.phase === 'plan') { const p = fresh(plans[r]) ? plans[r] : null; A = p && p.A; B = r === 'bou' ? 'live' : p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">PLANNING</span>'; }
+    else if (state.phase === 'bplan' && r === 'bou') { const p = fresh(plans.bou) ? plans.bou : null; A = state.plans && state.plans.bou && state.plans.bou.A; B = p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">CHOOSING</span>'; }
     else if (state.plans && state.plans[r]) { A = state.plans[r].A; B = state.plans[r].B; }
-    const f = x => x ? `<b>${CARD_NAME[x.c]}</b>${x.t != null && TARGETED[x.c] ? ' → ' + (x.t + 1) : ''}` : '—';
+    const f = x => x === 'live' ? '<i>picked live</i>' : x ? `<b>${CARD_NAME[x.c]}</b>${x.t != null && TARGETED[x.c] ? ' → ' + (x.t + 1) : ''}` : '—';
     const pw = state.powers && state.powers[r] ? ' · power used' : '';
     const row = el('div', 'mate', `<span class="dot" style="background:${ROLE_COLOR[r]}"></span><div><div><b>${ROLE_NAME[r]}</b> <span class="note">${seats[r] ? esc(nameOf(seats[r])) : 'empty'}${pw}</span></div><div class="plan">A ${f(A)} · B ${f(B)}</div></div>${status}`);
     t.appendChild(row);
@@ -795,18 +919,21 @@ function renderTeam() {
 }
 function renderLog() {
   const l = $('log'); const h = state.history || [];
-  l.innerHTML = h.length ? h.map(x => `<div><b>Round ${x.round}</b>${x.skipped ? ' (no planning)' : ''} · ${x.event ? EVENT_NAME[x.event] : '—'} · $${x.rev} · Pressure ${x.P}</div>`).join('') : '<div>Nothing yet. Round 1 is about to open.</div>';
+  l.innerHTML = h.length ? h.map(x => `<div><b>Round ${x.round}</b>${x.silent ? ' (silent)' : ''} · ${x.event ? EVENT_NAME[x.event] : (x.closed ? 'bar closed' : '–')} · $${x.rev} · Pressure ${x.P}</div>`).join('') : '<div>Nothing yet. Round 1 is about to open.</div>';
 }
 
-function openZoom(src) { $('zoomImg').src = src; $('zoom').hidden = false; zoomOpen = true; }
-$('zoom').onclick = () => { $('zoom').hidden = true; zoomOpen = false; };
+function openZoom(src, acts) { $('zoomImg').src = src; const a = $('zoomActs'); a.innerHTML = '';
+  (acts || []).forEach(([label, fn, ghost]) => { const b = el('button', 'btn' + (ghost ? ' ghost' : ''), label); b.onclick = e => { e.stopPropagation(); closeZoom(); fn(); }; a.appendChild(b); });
+  $('zoomHint').hidden = !!(acts && acts.length); $('zoom').hidden = false; zoomOpen = true; }
+function closeZoom() { $('zoom').hidden = true; zoomOpen = false; }
+$('zoom').onclick = e => { if (!e.target.closest('.zoomacts')) closeZoom(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && zoomOpen) $('zoom').click(); });
 
-setInterval(() => { if (!state) return; tick(); if (state.phase === 'plan') tryLock(); }, 500);
+setInterval(() => { if (!state) return; tick(); if (state.phase === 'plan' || state.phase === 'bplan') tryLock(); }, 500);
 boot();
 })();
 </script>
 
-<div id="relayNote">v3 · dual relay · connecting…</div>
+<div id="relayNote">v5 · connecting…</div>
 </body>
 </html>
