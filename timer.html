@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Last Call Table Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Josefin+Sans:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* The table's round tracker and talk timer: one phone in the middle of the table replaces the printed round track. */
+:root{
+  --night:#1b2033; --panel:#252d45; --panel-2:#2f3955; --line:#3d4868;
+  --cream:#f7f1e6; --ink:#2a2433; --muted:#a9b0c6; --text:#f3eee4;
+  --gold:#f2c14e; --pressure:#e2574c; --money:#3e9b5c; --plum:#8c5ba8;
+  --r-bar:#e2574c; --r-ser:#2fa59a; --r-bou:#e8a83a; --r-man:#5c6bc0;
+  --f-display:'Josefin Sans',system-ui,sans-serif; --f-body:'Work Sans',system-ui,sans-serif; --f-label:'Bebas Neue','Arial Narrow',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--night);color:var(--text);margin:0}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.lbl{font-family:var(--f-label);letter-spacing:.08em;font-size:15px;color:var(--muted)}
+h1,h2{font-family:var(--f-display);margin:0}
+.top{position:sticky;top:0;z-index:5;background:var(--night);display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 0;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-size:22px;letter-spacing:.04em;color:var(--gold)}
+.brand small{font-family:var(--f-label);color:var(--muted);font-size:15px;letter-spacing:.1em;margin-left:6px}
+.tabs{display:flex;gap:4px;background:var(--panel);padding:3px;border-radius:10px}
+.tabs a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px}
+.tabs a[aria-current]{background:var(--gold);color:var(--ink)}
+main{max-width:760px;margin:18px auto 0;display:grid;gap:14px}
+.panel{background:var(--panel);border-radius:16px;padding:16px}
+.rounds{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.rounds button{aspect-ratio:1;border-radius:50%;background:var(--cream);color:var(--ink);font-family:var(--f-display);font-size:clamp(16px,4.5vw,28px);font-weight:700;position:relative;display:grid;place-items:center;padding:0}
+.rounds button.done{opacity:.4}
+.rounds button[aria-current="step"]{background:var(--gold);box-shadow:0 0 0 3px var(--night),0 0 0 6px var(--gold)}
+.rounds small{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-family:var(--f-label);font-size:clamp(10px,2.6vw,13px);letter-spacing:.06em;color:var(--gold);white-space:nowrap}
+.rounds-wrap{padding-bottom:26px}
+.phase{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.clock{font-family:var(--f-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:clamp(84px,24vw,160px);line-height:1;text-align:center;margin:10px 0 6px;letter-spacing:.02em}
+.clock.hot{color:var(--pressure)}
+.clock.over{color:var(--pressure);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.bar{height:8px;background:var(--panel-2);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);transition:width .25s linear}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:14px}
+.btn{background:var(--gold);color:var(--ink);font-weight:700;padding:14px 22px;font-size:18px;min-width:140px}
+.btn.ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+.btn.small{padding:8px 12px;font-size:14px;min-width:0}
+.silent{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:12px;color:var(--muted)}
+.silent input{width:22px;height:22px;accent-color:var(--pressure)}
+.banner{background:#4a2330;border:1px solid #7a3446;color:#ffd9d2;border-radius:10px;padding:10px 12px;margin-top:10px;text-align:center}
+ol.steps{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+ol.steps li button{width:100%;text-align:left;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;background:var(--panel-2);color:var(--text);padding:10px 12px}
+ol.steps .n{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--ink);font-weight:700;display:grid;place-items:center;font-size:14px}
+ol.steps b{font-family:var(--f-label);letter-spacing:.06em;font-size:18px;font-weight:400;display:block}
+ol.steps span.t{color:var(--muted);font-size:14px}
+ol.steps li.done button{opacity:.45}
+ol.steps li.done .n{background:var(--money);color:#fff}
+.order{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.order span{font-size:12px;font-weight:700;color:#fff;padding:2px 8px;border-radius:999px}
+.end{text-align:center}
+.end .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.end .tiers div{background:var(--panel-2);border-radius:10px;padding:10px}
+.end .tiers b{display:block;font-family:var(--f-display);font-size:22px}
+.note{color:var(--muted);font-size:13px;text-align:center}
+@media (prefers-reduced-motion:reduce){.clock.over{animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">LAST CALL <small>PLAYTEST · ITERATION 5</small></div>
+  <nav class="tabs" aria-label="Playtest pages"><a href="./">Online game</a><a href="timer.html" aria-current="page">Table timer</a></nav>
+</header>
+<main>
+  <section class="panel rounds-wrap" aria-label="Round tracker">
+    <div class="phase"><span class="lbl">ROUND TRACK · TAP TO JUMP</span><button class="btn ghost small" id="newNight">New night</button></div>
+    <div class="rounds" id="rounds" style="margin-top:10px"></div>
+  </section>
+
+  <section class="panel" id="timerPanel" aria-live="polite">
+    <div class="phase"><h2 id="phaseTitle">Round 1 · Plan</h2><span class="lbl" id="phaseSub">TALK + PLACE 2 CARDS</span></div>
+    <div class="clock" id="clock">1:00</div>
+    <div class="bar"><i id="barFill" style="width:100%"></i></div>
+    <label class="silent" id="silentRow"><input type="checkbox" id="silent"> Pressure is 5 or more → silent planning (30 sec, no talking)</label>
+    <div class="banner" id="silentBanner" hidden>Silent planning: no talking, no pointing.</div>
+    <div class="row">
+      <button class="btn" id="startBtn">Start</button>
+      <button class="btn ghost" id="resetBtn">Reset</button>
+    </div>
+    <p class="note" id="lockNote">When time is up, cards and written seats are locked.</p>
+  </section>
+
+  <section class="panel" aria-label="This round">
+    <span class="lbl">THIS ROUND · TAP A STEP WHEN IT'S DONE</span>
+    <ol class="steps" id="steps"></ol>
+    <div class="row"><button class="btn ghost" id="prevBtn">Back</button><button class="btn" id="nextBtn">Next round</button></div>
+  </section>
+
+  <section class="panel end" id="endPanel" hidden>
+    <h2>Closing time</h2>
+    <p class="note">Nobody may be at Intoxication 4. Then check Revenue:</p>
+    <div class="tiers"><div><b>Under $26</b>The bar loses money</div><div><b>$26–27</b>The bar keeps going</div><div><b>$28+</b>Famous bar!</div></div>
+  </section>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ROLE = [['Bartender', 'var(--r-bar)'], ['Server', 'var(--r-ser)'], ['Bouncer', 'var(--r-bou)'], ['Manager', 'var(--r-man)']];
+  const store = { get(k, d) { try { const v = localStorage.getItem('lct_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('lct_' + k, JSON.stringify(v)); } catch (e) {} } };
+  let round = store.get('round', 1), silent = store.get('silent', false), doneSteps = store.get('done', {});
+  let total = 60, left = 60, running = false, endAt = 0, tickH = null, beeped10 = false;
+
+  const odd = () => round % 2 === 1;
+  function steps() {
+    const order = `<div class="order">${ROLE.map(([n, c]) => `<span style="background:${c}">${n}</span>`).join('')}</div>`;
+    const first = odd()
+      ? ['Plan', `Start the timer. ${silent ? 'No talking. ' : 'Talk, then '}place card A and card B and write their target seats. The Bouncer places card A only.`]
+      : ['Bouncer picks card B', 'Start the 30-second timer. The Bouncer looks at the room and places card B.'];
+    const list = [first,
+      ['Act', `Play card ${odd() ? 'A' : 'B'}, in this order:` + order],
+      ['Night Event', 'Flip one. Played Check the Forecast? The Manager looks at the top 2, picks one, puts the other at the bottom.'],
+      ['Last orders', '+1 Pressure for each customer at 4 (max +2). Happy Hour this round: +1 Pressure.'],
+      ['Check', odd() ? 'Pressure 8? You lose.' : 'Pressure 8? You lose. Discard played cards and wipe your seat boxes.']];
+    if (round === 8) list.push(['Closing time', 'Nobody at 4. Under $26 lose · $26–27 keep the bar · $28+ famous bar.']);
+    return list;
+  }
+  function renderRounds() {
+    const r = $('rounds'); r.innerHTML = '';
+    for (let i = 1; i <= 8; i++) {
+      const b = document.createElement('button'); b.textContent = i;
+      if (i < round) b.className = 'done'; if (i === round) b.setAttribute('aria-current', 'step');
+      b.setAttribute('aria-label', `Round ${i}${i % 2 ? ', planning round' : ''}`);
+      const s = document.createElement('small'); s.textContent = i % 2 ? 'PLAN' : ''; b.appendChild(s);
+      b.onclick = () => goRound(i); r.appendChild(b);
+    }
+  }
+  function renderSteps() {
+    const ol = $('steps'); ol.innerHTML = ''; const d = doneSteps[round] || {};
+    steps().forEach(([t, txt], i) => {
+      const li = document.createElement('li'); if (d[i]) li.className = 'done';
+      const b = document.createElement('button'); b.innerHTML = `<span class="n">${d[i] ? '✓' : i + 1}</span><span><b>${t}</b><span class="t">${txt}</span></span>`;
+      b.setAttribute('aria-pressed', !!d[i]);
+      b.onclick = () => { const cur = doneSteps[round] || (doneSteps[round] = {}); cur[i] = !cur[i]; store.set('done', doneSteps); renderSteps(); };
+      li.appendChild(b); ol.appendChild(li);
+    });
+    $('nextBtn').textContent = round === 8 ? 'Finish the night' : 'Next round';
+    $('prevBtn').disabled = round === 1;
+  }
+  function renderPhase() {
+    $('phaseTitle').textContent = `Round ${round} · ${odd() ? (silent ? 'Silent plan' : 'Plan') : 'Bouncer picks B'}`;
+    $('phaseSub').textContent = odd() ? (silent ? 'NO TALKING · 30 SEC' : 'TALK + PLACE 2 CARDS · 60 SEC') : 'BOUNCER ONLY · 30 SEC';
+    $('silentRow').hidden = !odd(); $('silent').checked = silent; $('silentBanner').hidden = !(odd() && silent);
+    $('lockNote').textContent = odd() ? 'When time is up, cards and written seats are locked.' : 'When time is up, the Bouncer\'s card B is locked.';
+  }
+  function durationFor() { return odd() ? (silent ? 30 : 60) : 30; }
+  function fmt(s) { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+  function drawClock() {
+    const c = $('clock'); c.textContent = fmt(left);
+    c.className = 'clock' + (left <= 0 ? ' over' : left <= 10 ? ' hot' : '');
+    $('barFill').style.width = Math.max(0, left / total * 100) + '%';
+    $('startBtn').textContent = running ? 'Pause' : (left <= 0 ? 'Restart' : left < total ? 'Resume' : 'Start');
+  }
+  function resetTimer() { stop(); total = left = durationFor(); beeped10 = false; drawClock(); }
+  function stop() { running = false; clearInterval(tickH); tickH = null; release(); }
+  function start() {
+    if (left <= 0) { left = total; beeped10 = false; }
+    running = true; endAt = Date.now() + left * 1000; unlockAudio(); keepAwake();
+    clearInterval(tickH); tickH = setInterval(tick, 200); drawClock();
+  }
+  function tick() {
+    left = (endAt - Date.now()) / 1000;
+    if (!beeped10 && left <= 10 && total > 10) { beeped10 = true; beep(660, 0.15); }
+    if (left <= 0) { left = 0; stop(); beep(440, 0.6); setTimeout(() => beep(440, 0.6), 700); try { navigator.vibrate && navigator.vibrate([300, 150, 300]); } catch (e) {} }
+    drawClock();
+  }
+  // sound
+  let ac = null;
+  function unlockAudio() { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} }
+  function beep(f, d) { try { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f; o.type = 'sine'; g.gain.setValueAtTime(0.0001, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.4, ac.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d); o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d + 0.05); } catch (e) {} }
+  // keep the screen on while timing
+  let lock = null;
+  async function keepAwake() { try { if ('wakeLock' in navigator && !lock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } } catch (e) {} }
+  function release() { try { lock && lock.release(); } catch (e) {} lock = null; }
+
+  function goRound(r) { round = Math.min(8, Math.max(1, r)); store.set('round', round); if (!odd()) {} render(); resetTimer(); }
+  function render() { renderRounds(); renderPhase(); renderSteps(); $('endPanel').hidden = !(store.get('finished', false)); }
+
+  $('startBtn').onclick = () => running ? (stop(), drawClock()) : start();
+  $('resetBtn').onclick = resetTimer;
+  $('silent').onchange = e => { silent = e.target.checked; store.set('silent', silent); renderPhase(); renderSteps(); resetTimer(); };
+  $('nextBtn').onclick = () => { if (round === 8) { store.set('finished', true); render(); $('endPanel').scrollIntoView({ behavior: 'smooth' }); return; } silent = false; store.set('silent', false); goRound(round + 1); };
+  $('prevBtn').onclick = () => goRound(round - 1);
+  $('newNight').onclick = () => { doneSteps = {}; store.set('done', {}); store.set('finished', false); silent = false; store.set('silent', false); goRound(1); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running) keepAwake(); });
+
+  render(); resetTimer();
+})();
+</script>
+</body>
+</html>
