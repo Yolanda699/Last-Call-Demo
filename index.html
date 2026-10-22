@@ -45,6 +45,8 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
 .tabs{display:flex;gap:4px;background:var(--panel);padding:3px;border-radius:10px}
 .tabs a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px}
 .tabs a[aria-current]{background:var(--gold);color:var(--ink)}
+.physbtn{margin-left:auto;background:var(--gold);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;padding:8px 14px;border-radius:10px;white-space:nowrap}
+.physbtn:hover{filter:brightness(1.08)}
 .custcard .pen{position:absolute;width:5.2%;aspect-ratio:1;border-radius:50%;background:#1d1a24;transform:translate(-50%,-50%);transition:left .5s ease}
 .slotseat{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:700;font-size:clamp(14px,2.4vw,30px);color:#1d1a24;line-height:1}
 .timer{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums;color:var(--gold);min-width:70px;text-align:right}
@@ -170,7 +172,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 
 <header class="top" id="top">
   <div class="brand">LAST CALL <small>PLAYTEST · ITERATION 5</small></div>
-  <nav class="tabs" aria-label="Playtest pages"><a href="./" aria-current="page">Online game</a><a href="timer.html">Table timer</a></nav>
+  <nav class="tabs" aria-label="Playtest pages"><a href="./" aria-current="page">Online game</a><a href="timer.html">Physical copy</a></nav>
   <div class="spacer"></div>
   <div id="hud" hidden style="display:contents">
     <div class="stat"><span class="lbl">ROUND</span><b id="hRound">1/8</b></div>
@@ -178,6 +180,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
     <div class="stat"><span class="lbl">PRESSURE · LOSE AT 8</span><div class="meter" id="hMeter"></div></div>
     <div class="timer" id="hTimer" aria-live="off"></div>
   </div>
+  <a class="physbtn" href="timer.html">Have The Physical Copy?</a>
 </header>
 
 <main id="app">
@@ -196,7 +199,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
           <button class="btn ghost" id="btnJoin">Join</button>
         </div>
       </div>
-      <img src="img/board.webp?b=20261020-161816" alt="The Last Call board" width="1980" height="1400">
+      <img src="img/board.webp?b=20261021-195922" alt="The Last Call board" width="1980" height="1400">
     </div>
     <div id="tableBox" class="panel" hidden>
       <div class="phase"><span class="lbl">TABLE CODE</span><span class="code" id="tCode"></span><span class="note">Share this code with the other three players.</span><div class="spacer"></div><button class="btn small ghost" id="btnLeave">Leave table</button></div>
@@ -210,7 +213,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
   <section id="game" hidden>
     <div class="game">
       <div style="display:grid;gap:14px;min-width:0">
-        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261020-161816" alt="Board"></div>
+        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261021-195922" alt="Board"></div>
         <details class="rules">
           <summary>RULES REMINDER</summary>
           <div class="rulesgrid">
@@ -226,7 +229,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
               <li><b>Pressure 8</b>: you lose. After Round 8: nobody may be at 4. Under <b>$26</b> you lose, <b>$26–27</b> the bar keeps going, <b>$28+</b> the bar becomes famous.</li>
               <li>Bartender, Server and Manager powers work once every 2 rounds and apply automatically. 8 of the 14 Night Events happen each night.</li>
             </ul>
-            <img src="img/drinkmenu.webp?b=20261020-161816" alt="Drink Menu reference card" width="315" height="440">
+            <img src="img/drinkmenu.webp?b=20261021-195922" alt="Drink Menu reference card" width="315" height="440">
           </div>
         </details>
       </div>
@@ -549,7 +552,7 @@ function status(msg, warn) { const s = $('lobbyStatus'); s.innerHTML = warn ? `<
 function myName() { return ($('myName').value || '').trim().slice(0, 24); }
 function newCode() { return Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); }
 
-const BUILD = '20261020-161816';
+const BUILD = '20261021-195922';
 // If the browser served an old cached copy, fetch the live page and reload once when it is newer.
 async function freshnessCheck() {
   try {
