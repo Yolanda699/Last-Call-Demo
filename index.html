@@ -199,7 +199,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
           <button class="btn ghost" id="btnJoin">Join</button>
         </div>
       </div>
-      <img src="img/board.webp?b=20261021-195922" alt="The Last Call board" width="1980" height="1400">
+      <img src="img/board.webp?b=20261029-151000" alt="The Last Call board" width="1980" height="1400">
     </div>
     <div id="tableBox" class="panel" hidden>
       <div class="phase"><span class="lbl">TABLE CODE</span><span class="code" id="tCode"></span><span class="note">Share this code with the other three players.</span><div class="spacer"></div><button class="btn small ghost" id="btnLeave">Leave table</button></div>
@@ -213,13 +213,13 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
   <section id="game" hidden>
     <div class="game">
       <div style="display:grid;gap:14px;min-width:0">
-        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261021-195922" alt="Board"></div>
+        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261029-151000" alt="Board"></div>
         <details class="rules">
           <summary>RULES REMINDER</summary>
           <div class="rulesgrid">
             <ul>
               <li><b>Plan</b> on rounds 1, 3, 5, 7. Round 1 has no timer. Rounds 3, 5, 7: <b>Talk</b> 60 seconds, then <b>Lock-in</b> 30 seconds with no talking. Place card A (this round) and card B (next round). When the timer ends, plans lock. <b>Played cards are discarded</b> – you play 8 of your 10 cards per night.</li>
-              <li><b>Bouncer – on the floor</b>: plans only card A, then picks card B at the start of the even round (30 seconds).</li>
+              <li><b>Bouncer – on the floor</b> (power): place card A only, or A and B. At the start of the even round you get 30 extra seconds to place card B or swap it.</li>
               <li><b>Check the Forecast</b>: the Manager sees the top 2 Night Events and picks one; the other goes to the bottom.</li>
               <li><b>Customers</b>: 6 of 10 are dealt at random. Ride Home sends one home and the next customer takes the seat.</li>
               <li><b>Act</b>: Bartender first, then Server, Bouncer, Manager. Odd rounds play A, even rounds play B.</li>
@@ -229,7 +229,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
               <li><b>Pressure 8</b>: you lose. After Round 8: nobody may be at 4. Under <b>$26</b> you lose, <b>$26–27</b> the bar keeps going, <b>$28+</b> the bar becomes famous.</li>
               <li>Bartender, Server and Manager powers work once every 2 rounds and apply automatically. 8 of the 14 Night Events happen each night.</li>
             </ul>
-            <img src="img/drinkmenu.webp?b=20261021-195922" alt="Drink Menu reference card" width="315" height="440">
+            <img src="img/drinkmenu.webp?b=20261029-151000" alt="Drink Menu reference card" width="315" height="440">
           </div>
         </details>
       </div>
@@ -498,16 +498,23 @@ function lockPlansAndResolve(S, planDocs) {
     const A = ok ? spend(s, role, normPlan(d.A)) : null;
     const B = ok && role !== 'bou' ? spend(s, role, normPlan(d.B)) : null;
     s.plans[role] = { A, B };
+    if (role === 'bou' && ok) { // On the Floor: a B placed now is only pencilled in – the Bouncer can keep or swap it at the start of the even round
+      let pre = normPlan(d.B);
+      if (pre && (remaining(s, 'bou')[pre.c] || 0) < 1) pre = null;
+      if (pre && pre.t != null && A && TARGETED[A.c] && A.t === pre.t) pre = null;
+      s.plans.bou.pre = pre;
+    }
   }
   return resolveRound(s);
 }
 
-// Bouncer's live card B for the even round.
+// Bouncer's card B for the even round: placed or swapped in their extra 30 seconds.
 function lockBouncerAndResolve(S, doc) {
   const s = clone(S);
   const ok = doc && doc.cycle === s.cycle && doc.gid === s.gid && doc.stage === 'B' + s.round;
   s.plans = s.plans || {}; s.plans.bou = s.plans.bou || { A: null, B: null };
-  let B = ok ? normPlan(doc.B) : null;
+  let B = ok ? normPlan(doc.B) : (s.plans.bou.pre || null); // no change in the 30 s → the pencilled-in B stands
+  delete s.plans.bou.pre;
   if (B && B.t != null && s.plans.bou.A && TARGETED[s.plans.bou.A.c] && s.plans.bou.A.t === B.t) B = null;
   s.plans.bou.B = spend(s, 'bou', B);
   return resolveRound(s);
@@ -553,7 +560,7 @@ function status(msg, warn) { const s = $('lobbyStatus'); s.innerHTML = warn ? `<
 function myName() { return ($('myName').value || '').trim().slice(0, 24); }
 function newCode() { return Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); }
 
-const BUILD = '20261021-195922';
+const BUILD = '20261029-151000';
 // If the browser served an old cached copy, fetch the live page and reload once when it is newer.
 async function freshnessCheck() {
   try {
@@ -695,7 +702,7 @@ function getDraft(role) {
   const st = curStage();
   if (!draft[role] || draft[role].cycle !== state.cycle || draft[role].gid !== state.gid || draft[role].stage !== st) {
     draft[role] = fresh(p) ? { gid: state.gid, cycle: state.cycle, stage: st, A: p.A || null, B: p.B || null, ready: !!p.ready } : { gid: state.gid, cycle: state.cycle, stage: st, A: null, B: null, ready: false };
-    if (st !== 'P') draft[role].A = (state.plans && state.plans[role] && state.plans[role].A) || null;
+    if (st !== 'P') { draft[role].A = (state.plans && state.plans[role] && state.plans[role].A) || null; if (!fresh(p)) draft[role].B = (state.plans && state.plans[role] && state.plans[role].pre) || null; }
   }
   return draft[role];
 }
@@ -722,8 +729,8 @@ function pickSeat(role, t) {
   const other = activeSlot === 'A' ? 'B' : 'A'; if (!d[other] && !lockedSlot(role)) activeSlot = other;
   render();
 }
-// Bouncer: plans only A in planning rounds; picks only B live.
-function lockedSlot(role) { if (role !== 'bou' || !state) return null; return state.phase === 'bplan' ? 'B' : 'A'; }
+// Bouncer: may place A only or A and B while planning; in the even round only slot B is open (place or swap).
+function lockedSlot(role) { if (role !== 'bou' || !state) return null; return state.phase === 'bplan' ? 'B' : null; }
 function clearSlot(role, k) { const d = getDraft(role); if (d.ready) return; d[k] = null; activeSlot = k; pushDraft(role); render(); }
 function toggleReady(role) { const d = getDraft(role); d.ready = !d.ready; pushDraft(role); render(); }
 
@@ -824,11 +831,11 @@ function renderPhase() {
     if (!state.planEndsAt) p.appendChild(el('div', 'banner', 'Teaching round – no timer. Talk through the plan together and take as long as you need.'));
     else if (state.silent) p.appendChild(el('div', 'banner', `Pressure ${state.P}: silent planning. No Talk step – just a 30-second Lock-in with no talking or pointing. Teammates' cards still show on the board.`));
     else p.appendChild(el('div', 'banner', talking ? 'Talk – 60 seconds: discuss strategy freely. Lock-in (30 seconds, no talking) follows.' : 'Lock-in – 30 seconds: no more strategy talk. Finish placing cards A and B and their seats.'));
-    p.appendChild(el('div', 'note', `Place card A (Round ${state.round}) and card B (Round ${state.round + 1}) – the Bouncer places only A. ${state.planEndsAt ? 'Plans lock when the Lock-in ends or when all four are ready.' : 'Plans lock when all four are ready.'} Targets on the board show everyone's card A.`));
+    p.appendChild(el('div', 'note', `Place card A (Round ${state.round}) and card B (Round ${state.round + 1}) – the Bouncer can leave B for later. ${state.planEndsAt ? 'Plans lock when the Lock-in ends or when all four are ready.' : 'Plans lock when all four are ready.'} Targets on the board show everyone's card A.`));
   } else if (state.phase === 'bplan') {
     const ready = fresh(plans.bou) && plans.bou.ready;
     p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Bouncer on the floor</h2><span class="pill ${ready ? 'go' : 'wait'}">${ready ? 'READY' : 'CHOOSING'}</span>`));
-    p.appendChild(el('div', 'note', `Everyone else's card B is locked. The Bouncer looks at the room and picks card B now. Round ${state.round} plays when they're ready or the timer ends.`));
+    p.appendChild(el('div', 'note', `Everyone else's card B is locked. On the Floor: the Bouncer has 30 extra seconds to place card B or swap the one they placed. Round ${state.round} plays when they're ready or the timer ends.`));
   } else if (state.phase === 'forecast') {
     p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Check the Forecast</h2><span class="pill wait">MANAGER PICKS</span>`));
     const isMan = myRoles().includes('man');
@@ -856,7 +863,7 @@ function renderPhase() {
     p.appendChild(steps);
     const dRev = L.after.rev - L.before.rev, dP = L.after.P - L.before.P;
     p.appendChild(el('div', 'delta', `<span>Revenue $${L.before.rev} → $${L.after.rev} (${dRev >= 0 ? '+' : ''}${dRev})</span><span>Pressure ${L.before.P} → ${L.after.P} (${dP >= 0 ? '+' : ''}${dP})</span>`));
-    const nextLabel = state.result ? 'See the result' : (L.round % 2 === 1 ? `Round ${L.round + 1}: Bouncer picks card B` : (state.P >= SKIP_AT_UI() ? `Plan Round ${L.round + 1} – silent` : `Plan Round ${L.round + 1}`));
+    const nextLabel = state.result ? 'See the result' : (L.round % 2 === 1 ? `Round ${L.round + 1}: Bouncer’s 30 s for card B` : (state.P >= SKIP_AT_UI() ? `Plan Round ${L.round + 1} – silent` : `Plan Round ${L.round + 1}`));
     const btn = el('button', 'btn', esc(nextLabel)); btn.onclick = () => transition(state.step, 'continue');
     p.appendChild(btn);
     p.appendChild(el('div', 'note', 'Anyone can continue once the table has read the results.'));
@@ -930,6 +937,8 @@ function renderMine() {
   const probs = lock === 'A' ? planProblems(state, role, d.A, null) : lock === 'B' ? planProblems(state, role, A, d.B, true) : planProblems(state, role, d.A, d.B);
   if (lock === 'A' && !d.A) probs.unshift('Place card A. You pick card B at the start of the next round.');
   else if (lock === 'B' && !d.B) probs.unshift('Pick card B for this round. An empty slot plays nothing.');
+  else if (lock === 'B' && d.B) probs.unshift('Keep this card B or swap it for another card, then tap Ready.');
+  else if (role === 'bou' && !lock && d.A && !d.B) probs.unshift('Card B is optional for you: leave it empty and place it in your extra 30 seconds next round, or place it now and swap it then.');
   else if (!lock && (!d.A || !d.B)) probs.unshift(`Place ${!d.A && !d.B ? 'cards A and B' : !d.A ? 'card A' : 'card B'}. An empty slot plays nothing.`);
   if (probs.length) box.appendChild(el('div', 'problems', probs.map(esc).join('<br>')));
   const rr = el('div', 'readyrow');
@@ -942,10 +951,10 @@ function renderTeam() {
   const t = $('team'); t.innerHTML = '';
   for (const r of ROLES) {
     let A = null, B = null, status = '';
-    if (state.phase === 'plan') { const p = fresh(plans[r]) ? plans[r] : null; A = p && p.A; B = r === 'bou' ? 'live' : p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">PLANNING</span>'; }
+    if (state.phase === 'plan') { const p = fresh(plans[r]) ? plans[r] : null; A = p && p.A; B = r === 'bou' ? (p && p.B ? p.B : 'live') : p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">PLANNING</span>'; }
     else if (state.phase === 'bplan' && r === 'bou') { const p = fresh(plans.bou) ? plans.bou : null; A = state.plans && state.plans.bou && state.plans.bou.A; B = p && p.B; status = p && p.ready ? '<span class="pill go">READY</span>' : '<span class="pill">CHOOSING</span>'; }
     else if (state.plans && state.plans[r]) { A = state.plans[r].A; B = state.plans[r].B; }
-    const f = x => x === 'live' ? '<i>picked live</i>' : x ? `<b>${CARD_NAME[x.c]}</b>${x.t != null && TARGETED[x.c] ? ' → ' + (x.t + 1) : ''}` : '—';
+    const f = x => x === 'live' ? '<i>later</i>' : x ? `<b>${CARD_NAME[x.c]}</b>${x.t != null && TARGETED[x.c] ? ' → ' + (x.t + 1) : ''}` : '—';
     const pw = state.powers && state.powers[r] ? ' · power used' : '';
     const row = el('div', 'mate', `<span class="dot" style="background:${ROLE_COLOR[r]}"></span><div><div><b>${ROLE_NAME[r]}</b> <span class="note">${seats[r] ? esc(nameOf(seats[r])) : 'empty'}${pw}</span></div><div class="plan">A ${f(A)} · B ${f(B)}</div></div>${status}`);
     t.appendChild(row);
