@@ -218,14 +218,14 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
           <summary>RULES REMINDER</summary>
           <div class="rulesgrid">
             <ul>
-              <li><b>Plan</b> on rounds 1, 3, 5, 7: the timer is 60 seconds. Place card A (this round) and card B (next round). When the timer ends, plans lock. <b>Played cards are discarded</b> – you play 8 of your 10 cards per night.</li>
+              <li><b>Plan</b> on rounds 1, 3, 5, 7. Round 1 has no timer. Rounds 3, 5, 7: <b>Talk</b> 60 seconds, then <b>Lock-in</b> 30 seconds with no talking. Place card A (this round) and card B (next round). When the timer ends, plans lock. <b>Played cards are discarded</b> – you play 8 of your 10 cards per night.</li>
               <li><b>Bouncer – on the floor</b>: plans only card A, then picks card B at the start of the even round (30 seconds).</li>
               <li><b>Check the Forecast</b>: the Manager sees the top 2 Night Events and picks one; the other goes to the bottom.</li>
               <li><b>Customers</b>: 6 of 10 are dealt at random. Ride Home sends one home and the next customer takes the seat.</li>
               <li><b>Act</b>: Bartender first, then Server, Bouncer, Manager. Odd rounds play A, even rounds play B.</li>
               <li><b>Night Event</b>, then <b>last orders</b>: +1 Pressure per customer still at 4 (max +2).</li>
               <li>Reaching 4: +1 Pressure. A drink that would go above 4 is wasted. Cocktail can't go to the First Date.</li>
-              <li><b>Pressure 5+</b> when a planning round starts: silent planning – no talking, and only 30 seconds.</li>
+              <li><b>Pressure 5+</b> when a planning round starts: silent planning – skip Talk, do only the 30-second Lock-in with no talking.</li>
               <li><b>Pressure 8</b>: you lose. After Round 8: nobody may be at 4. Under <b>$26</b> you lose, <b>$26–27</b> the bar keeps going, <b>$28+</b> the bar becomes famous.</li>
               <li>Bartender, Server and Manager powers work once every 2 rounds and apply automatically. 8 of the 14 Night Events happen each night.</li>
             </ul>
@@ -263,7 +263,8 @@ const CUST = ['The Regular', 'Karaoke Star', 'First Date', 'Off-Duty Chef', 'Spo
 const C = { REG: 0, KAR: 1, DATE: 2, CHEF: 3, FAN: 4, TOUR: 5, LIGHT: 6, OWL: 7, SPEND: 8, DD: 9 };
 const EVENTS = ['argument', 'rush', 'drive', 'spilled', 'karaoke', 'inspection', 'trivia', 'tipper', 'celebrity', 'critic', 'quiet', 'bachelorette', 'surge', 'gamenight'];
 const EVENT_NAME = { argument: 'Argument', rush: 'Last Call Rush', drive: 'I Can Drive', spilled: 'Spilled Drinks', karaoke: 'Karaoke Encore', inspection: 'Surprise Inspection', trivia: 'Trivia Night', tipper: 'Big Tipper', celebrity: 'Celebrity Visit', critic: 'Food Critic', quiet: 'Quiet Night', bachelorette: 'Bachelorette Party', surge: 'Rideshare Surge', gamenight: 'Game Night Final' };
-const PLAN_SECONDS = { 1: 60, 3: 60, 5: 60, 7: 60 }, SILENT_SECONDS = 30, BOUNCER_SECONDS = 30;
+// Iteration 5 timing: Round 1 untimed; Rounds 3/5/7 Talk 60 s then Lock-in 30 s; silent (Pressure 5+) = Lock-in only; Bouncer 30 s.
+const TALK_SECONDS = 60, LOCK_SECONDS = 30, PLAN_SECONDS = { 1: 0, 3: TALK_SECONDS + LOCK_SECONDS, 5: TALK_SECONDS + LOCK_SECONDS, 7: TALK_SECONDS + LOCK_SECONDS }, SILENT_SECONDS = LOCK_SECONDS, BOUNCER_SECONDS = 30;
 const GOAL = 26, FAMOUS = 28, LOSE_AT = 8, SKIP_AT = 5, ROUNDS = 8;
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -389,7 +390,7 @@ function eventEffect(s, e, rnd) {
     case 'critic': return rnd.df ? { dRev: 2, dP: 0, why: 'Drink + Food was served' } : { dRev: -Math.min(1, s.rev), dP: 0, why: 'no Drink + Food this round' };
     case 'quiet': return { dP: s.P > 0 ? -1 : 0, why: 'the room settles' };
     case 'bachelorette': return { dP: 0, why: '', bach: true };
-    case 'surge': return any(3) && !rnd.ride ? { dP: 1, why: 'someone is at 3+ and nobody went home' } : { dP: 0, why: any(3) ? 'a guest went home this round' : 'nobody at 3+' };
+    case 'surge': return any(3) && !rnd.ride ? { dP: 2, why: 'someone is at 3+ and nobody went home' } : { dP: 0, why: any(3) ? 'a guest went home this round' : 'nobody at 3+' };
     case 'gamenight': return rnd.alc >= 3 ? { dRev: 2, dP: 0, why: `${rnd.alc} alcoholic drinks served` } : { dP: 0, why: `only ${rnd.alc} alcoholic drink${rnd.alc === 1 ? '' : 's'}` };
   }
   return { dP: 0, why: '' };
@@ -644,7 +645,7 @@ function hostApply(a, from) {
 }
 function applyTransition(s, kind, arg) {
   const now = Date.now();
-  if (kind === 'start' || kind === 'again') { if (!ROLES.every(r => store.seats[r])) return null; const g = newGame(s.code || code, s.createdBy); g.planEndsAt = now + PLAN_SECONDS[1] * 1000; g.step = (s.step || 0) + 1; return g; }
+  if (kind === 'start' || kind === 'again') { if (!ROLES.every(r => store.seats[r])) return null; const g = newGame(s.code || code, s.createdBy); g.planEndsAt = 0; /* Round 1 is the untimed teaching round */ g.step = (s.step || 0) + 1; return g; }
   if (kind === 'lobby') return { v: 1, code: s.code || code, createdBy: s.createdBy, phase: 'lobby', step: s.step + 1 };
   if (kind === 'continue' && s.phase === 'reveal') return nextRound(s, now);
   if (kind === 'lock' && s.phase === 'plan') return lockPlansAndResolve(s, store.plans);
@@ -682,7 +683,7 @@ function tryLock() {
   if (state.phase === 'bplan') { if (!(fresh(plans.bou) && plans.bou.ready) && Date.now() < state.planEndsAt + 300) return; transition(state.step, 'lockB'); return; }
   if (state.phase !== 'plan') return;
   const all = ROLES.every(r => fresh(plans[r]) && plans[r].ready);
-  if (!all && Date.now() < state.planEndsAt + 300) return;
+  if (!all && (!state.planEndsAt || Date.now() < state.planEndsAt + 300)) return; // Round 1 (no timer): wait for all four
   transition(state.step, 'lock');
 }
 
@@ -757,7 +758,13 @@ function renderHud() {
 }
 function tick() {
   const t = $('hTimer');
-  if (state && (state.phase === 'plan' || state.phase === 'bplan')) { const s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)); t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.className = 'timer' + (s <= 10 ? ' hot' : ''); }
+  if (state && state.phase === 'plan' && !state.planEndsAt) { t.textContent = 'NO TIMER'; t.className = 'timer'; t.style.fontSize = '16px'; }
+  else if (state && (state.phase === 'plan' || state.phase === 'bplan')) {
+    t.style.fontSize = '';
+    let s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)), tag = '';
+    if (state.phase === 'plan') { if (state.silent) tag = 'SILENT '; else if (s > LOCK_SECONDS) { s -= LOCK_SECONDS; tag = 'TALK '; } else tag = 'LOCK-IN '; }
+    else tag = 'BOUNCER ';
+    t.innerHTML = `<small style="font-size:12px;letter-spacing:.08em;margin-right:6px">${tag}</small>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.className = 'timer' + (s <= 10 ? ' hot' : ''); }
   else t.textContent = '';
 }
 
@@ -813,8 +820,11 @@ function renderPhase() {
   if (state.phase === 'plan') {
     const ready = ROLES.filter(r => fresh(plans[r]) && plans[r].ready).length;
     p.appendChild(el('div', 'phase', `<h2>Plan · Round ${state.round}</h2><span class="pill wait">${ready}/4 READY</span>`));
-    if (state.silent) p.appendChild(el('div', 'banner', `Pressure ${state.P}: silent planning. No talking, no pointing – 30 seconds. Teammates' cards still show on the board.`));
-    p.appendChild(el('div', 'note', `${state.silent ? 'Without talking, place' : 'Talk it through and place'} card A (Round ${state.round}) and card B (Round ${state.round + 1}). Plans lock when the timer ends or when all four are ready. Targets on the board show everyone's card A.`));
+    const talking = !state.silent && state.planEndsAt && (state.planEndsAt - Date.now()) / 1000 > LOCK_SECONDS;
+    if (!state.planEndsAt) p.appendChild(el('div', 'banner', 'Teaching round – no timer. Talk through the plan together and take as long as you need.'));
+    else if (state.silent) p.appendChild(el('div', 'banner', `Pressure ${state.P}: silent planning. No Talk step – just a 30-second Lock-in with no talking or pointing. Teammates' cards still show on the board.`));
+    else p.appendChild(el('div', 'banner', talking ? 'Talk – 60 seconds: discuss strategy freely. Lock-in (30 seconds, no talking) follows.' : 'Lock-in – 30 seconds: no more strategy talk. Finish placing cards A and B and their seats.'));
+    p.appendChild(el('div', 'note', `Place card A (Round ${state.round}) and card B (Round ${state.round + 1}) – the Bouncer places only A. ${state.planEndsAt ? 'Plans lock when the Lock-in ends or when all four are ready.' : 'Plans lock when all four are ready.'} Targets on the board show everyone's card A.`));
   } else if (state.phase === 'bplan') {
     const ready = fresh(plans.bou) && plans.bou.ready;
     p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Bouncer on the floor</h2><span class="pill ${ready ? 'go' : 'wait'}">${ready ? 'READY' : 'CHOOSING'}</span>`));
@@ -953,7 +963,12 @@ function closeZoom() { $('zoom').hidden = true; zoomOpen = false; }
 $('zoom').onclick = e => { if (!e.target.closest('.zoomacts')) closeZoom(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && zoomOpen) $('zoom').click(); });
 
-setInterval(() => { if (!state) return; tick(); if (state.phase === 'plan' || state.phase === 'bplan') tryLock(); }, 500);
+let lastPlanStep = '';
+setInterval(() => {
+  if (!state) return; tick();
+  if (state.phase === 'plan') { const st = !state.planEndsAt ? 'teach' : state.silent ? 'silent' : (state.planEndsAt - Date.now()) / 1000 > LOCK_SECONDS ? 'talk' : 'lock'; if (st !== lastPlanStep) { const first = !lastPlanStep; lastPlanStep = st; if (!first) render(); } }
+  if (state.phase === 'plan' || state.phase === 'bplan') tryLock();
+}, 500);
 boot();
 })();
 </script>

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700&family=Work+Sans:wght@500;600;700&display=swap">
 <style>
-/* Physical copy companion: round number, a timer and a talk/silent switch. Everything else lives on the board. */
+/* Physical copy companion (Iteration 5 timing). Round 1: no timer. Rounds 3/5/7: Talk 60 s → Lock-in 30 s (silent at Pressure 5+: Lock-in only). Rounds 2/4/6/8: Bouncer picks card B, 30 s. */
 :root{
   --night:#1b2033; --panel:#252d45; --line:#3d4868; --ink:#2a2433; --muted:#a9b0c6; --text:#f3eee4;
   --gold:#f2c14e; --red:#e2574c;
@@ -33,6 +33,14 @@ main{max-width:560px;margin:0 auto;padding-top:clamp(24px,6vh,64px);display:grid
 .round b{color:var(--gold)}
 .clock{font-family:var(--f-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:clamp(96px,30vw,180px);line-height:1;letter-spacing:.02em}
 .clock.hot{color:var(--red)}
+.clock.idle{color:var(--muted);font-size:clamp(56px,16vw,96px)}
+.stage{display:grid;gap:6px}
+.stage .name{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,6vw,30px);color:var(--gold);letter-spacing:.03em}
+.stage .hint{color:var(--muted);font-size:17px;line-height:1.4;max-width:440px;justify-self:center}
+.steps{display:flex;gap:8px;justify-content:center}
+.steps span{padding:4px 12px;border-radius:999px;border:2px solid var(--line);color:var(--muted);font-weight:600;font-size:14px}
+.steps span.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.steps span.done{opacity:.45;text-decoration:line-through}
 .switch{display:inline-flex;align-items:center;gap:14px;justify-self:center;cursor:pointer;font-weight:600;font-size:18px;user-select:none}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
 .track{width:64px;height:36px;border-radius:999px;background:var(--panel);border:2px solid var(--line);position:relative;transition:background .2s}
@@ -59,9 +67,11 @@ main{max-width:560px;margin:0 auto;padding-top:clamp(24px,6vh,64px);display:grid
 </header>
 <main>
   <div class="round" id="round" aria-live="polite">Round <b>1</b> of 8</div>
+  <div class="stage"><div class="name" id="stageName"></div><div class="hint" id="stageHint"></div></div>
+  <div class="steps" id="steps"></div>
   <div class="clock" id="clock">1:00</div>
-  <label class="switch"><span class="off">Talk freely</span><input type="checkbox" id="silent" aria-label="Silent planning"><span class="track"></span><span class="on">Silent</span></label>
-  <div class="row"><button class="btn" id="startBtn">Start</button><button class="btn ghost" id="resetBtn">Reset</button></div>
+  <label class="switch" id="switchBox"><span class="off">Talk + Lock-in</span><input type="checkbox" id="silent" aria-label="Silent planning (Pressure 5 or more)"><span class="track"></span><span class="on">Silent (Pressure 5+)</span></label>
+  <div class="row" id="ctrlRow"><button class="btn" id="startBtn">Start</button><button class="btn ghost" id="resetBtn">Reset</button></div>
   <div class="row"><button class="btn ghost" id="prevBtn">Back</button><button class="btn ghost" id="nextBtn">Next round</button></div>
 </main>
 <div class="ring" id="ring" hidden role="alertdialog" aria-labelledby="ringTitle"><div><h2 id="ringTitle">Time's up!</h2><button class="btn" id="ringStop">OK</button></div></div>
@@ -70,34 +80,56 @@ main{max-width:560px;margin:0 auto;padding-top:clamp(24px,6vh,64px);display:grid
   const $ = id => document.getElementById(id);
   const get = (k, d) => { try { const v = localStorage.getItem('lcs_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
   const put = (k, v) => { try { localStorage.setItem('lcs_' + k, JSON.stringify(v)); } catch (e) {} };
-  let round = get('round', 1), silent = false, left = 60, running = false, endAt = 0, tickH = null, ringH = null, ac = null, lock = null;
-  const duration = () => silent ? 30 : 60;
+  // Iteration 5 timing
+  const TALK = { key: 'talk', tag: 'Talk', name: 'Talk – 60 seconds', secs: 60, hint: 'Discuss the plan with your cards in hand. Nothing is placed or written yet.', end: 'Lock-in!' };
+  const LOCK = { key: 'lock', tag: 'Lock-in', name: 'Lock-in – 30 seconds', secs: 30, hint: 'No more talking. Place card A and card B and write the seat numbers.', end: 'Plans locked!' };
+  const SILENT = { key: 'lock', tag: 'Silent lock-in', name: 'Silent lock-in – 30 seconds', secs: 30, hint: 'Pressure is 5 or more: no talking, pointing or signalling. Place cards A and B and write seats.', end: 'Plans locked!' };
+  const BOUNCER = { key: 'bou', tag: 'Bouncer', name: 'Bouncer picks card B – 30 seconds', secs: 30, hint: 'Everyone else already placed card B. The Bouncer checks what card A and the Night Event did, then chooses.', end: 'Bouncer locked!' };
+  const TEACH = { key: 'teach', tag: 'Teaching', name: 'Teaching round – no timer', secs: 0, hint: 'Talk through the plan together and take as long as you need. Place card A and card B (the Bouncer places only A).' };
+  const stepsFor = (r, silent) => r === 1 ? [TEACH] : r % 2 === 0 ? [BOUNCER] : silent ? [SILENT] : [TALK, LOCK];
+
+  let round = get('round', 1), silent = false, idx = 0, left = 0, running = false, endAt = 0, tickH = null, ringH = null, ac = null, lock = null;
+  const cur = () => stepsFor(round, silent)[idx];
   const fmt = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   function draw() {
+    const list = stepsFor(round, silent), st = cur(), timed = st.secs > 0;
     $('round').innerHTML = `Round <b>${round}</b> of 8`;
-    $('clock').textContent = fmt(left); $('clock').className = 'clock' + (left <= 10 ? ' hot' : '');
-    $('startBtn').textContent = running ? 'Pause' : (left < duration() && left > 0 ? 'Resume' : 'Start');
+    $('stageName').textContent = st.name; $('stageHint').textContent = st.hint;
+    $('steps').innerHTML = list.length > 1 ? list.map((x, i) => `<span class="${i === idx ? 'on' : i < idx ? 'done' : ''}">${x.tag}</span>`).join('') : '';
+    $('clock').textContent = timed ? fmt(left) : 'No timer';
+    $('clock').className = 'clock' + (!timed ? ' idle' : left <= 10 ? ' hot' : '');
+    $('switchBox').hidden = !(round % 2 === 1 && round > 1);
+    $('ctrlRow').hidden = !timed;
+    $('startBtn').textContent = running ? 'Pause' : (left < st.secs && left > 0 ? 'Resume' : 'Start');
     $('silent').checked = silent;
     $('prevBtn').disabled = round === 1;
     $('nextBtn').textContent = round === 8 ? 'New night' : 'Next round';
   }
   function stop() { running = false; clearInterval(tickH); }
-  function reset() { stop(); left = duration(); draw(); }
+  function reset() { stop(); idx = 0; left = cur().secs; draw(); }
   function start() {
-    if (left <= 0) left = duration();
+    if (left <= 0) left = cur().secs;
     try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) {}
     try { if ('wakeLock' in navigator && !lock) navigator.wakeLock.request('screen').then(l => { lock = l; l.addEventListener('release', () => lock = null); }); } catch (e) {}
     running = true; endAt = Date.now() + left * 1000; clearInterval(tickH);
-    tickH = setInterval(() => { left = (endAt - Date.now()) / 1000; if (left <= 0) { left = 0; stop(); ring(); } draw(); }, 200); draw();
+    tickH = setInterval(() => { left = (endAt - Date.now()) / 1000; if (left <= 0) { left = 0; stop(); stepDone(); } draw(); }, 200); draw();
+  }
+  // Talk → Lock-in rolls straight on with a short chime; the last step rings.
+  function stepDone() {
+    const list = stepsFor(round, silent);
+    if (idx < list.length - 1) { chime(); idx++; left = cur().secs; start(); return; }
+    ring(cur().end);
   }
   function tone(f, at) { try { const t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12); o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.15); } catch (e) {} }
   const bell = () => { for (let i = 0; i < 4; i++) { tone(1320, i * 0.14); tone(990, i * 0.14 + 0.07); } };
-  function ring() {
+  const chime = () => { tone(880, 0); tone(1320, 0.18); try { navigator.vibrate && navigator.vibrate(300); } catch (e) {} };
+  function ring(msg) {
+    $('ringTitle').textContent = msg || "Time's up!";
     $('ring').hidden = false; bell(); let n = 0;
     try { navigator.vibrate && navigator.vibrate([400, 200, 400, 200, 400]); } catch (e) {}
     clearInterval(ringH); ringH = setInterval(() => (++n >= 6 ? stopRing() : bell()), 1300); $('ringStop').focus();
   }
-  function stopRing() { clearInterval(ringH); $('ring').hidden = true; left = duration(); draw(); }
+  function stopRing() { clearInterval(ringH); $('ring').hidden = true; reset(); }
   function goRound(r) { round = r; put('round', round); silent = false; reset(); }
 
   $('startBtn').onclick = () => { running ? stop() : start(); draw(); };

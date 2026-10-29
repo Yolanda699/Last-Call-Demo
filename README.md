@@ -1,4 +1,4 @@
-# Last Call – online playtest table (Iteration 4)
+# Last Call – online playtest table (Iteration 5)
 
 A static website: 4 players, each on their own device, no accounts.
 Art comes from the Last Call Figma file (exported to `img/`).
@@ -25,6 +25,6 @@ Art comes from the Last Call Figma file (exported to `img/`).
 
 ## Updating rules or art
 
-- Rules live in the `Last Call – Iteration 4 rules engine` section near the bottom of `index.html`
+- Rules live in the `Last Call – Iteration 5 rules engine` section near the bottom of `index.html`
   (goal, timers, card effects, Night Events).
 - Art lives in `img/` (WebP files exported from Figma). Replace a file with one of the same name to swap art.
