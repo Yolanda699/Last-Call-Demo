@@ -16,7 +16,7 @@
   --f-display:'Josefin Sans',system-ui,sans-serif; --f-body:'Work Sans',system-ui,sans-serif; --f-label:'Bebas Neue','Arial Narrow',sans-serif;
   color-scheme:dark;
 }
-html,body{background:var(--night);color:var(--text)}
+html,body{background:var(--night);color:var(--text);margin:0}
 body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--night)}
 *{box-sizing:border-box}
@@ -45,8 +45,8 @@ h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
 .tabs{display:flex;gap:4px;background:var(--panel);padding:3px;border-radius:10px}
 .tabs a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px}
 .tabs a[aria-current]{background:var(--gold);color:var(--ink)}
-.physbtn{margin-left:auto;background:var(--gold);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;padding:8px 14px;border-radius:10px;white-space:nowrap}
-.physbtn:hover{filter:brightness(1.08)}
+.toplink{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap}
+.toplink:hover{color:var(--text)}
 .custcard .pen{position:absolute;width:5.2%;aspect-ratio:1;border-radius:50%;background:#1d1a24;transform:translate(-50%,-50%);transition:left .5s ease}
 .slotseat{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-display);font-weight:700;font-size:clamp(14px,2.4vw,30px);color:#1d1a24;line-height:1}
 .timer{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums;color:var(--gold);min-width:70px;text-align:right}
@@ -171,7 +171,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 
 
 <header class="top" id="top">
-  <div class="brand">LAST CALL <small>PLAYTEST · ITERATION 5</small></div>
+  <div class="brand">LAST CALL <small>PLAYTEST · ITERATION 6</small></div>
   <nav class="tabs" aria-label="Playtest pages"><a href="./" aria-current="page">Online game</a><a href="timer.html">Physical copy</a><a href="credits.html">Credits</a></nav>
   <div class="spacer"></div>
   <div id="hud" hidden style="display:contents">
@@ -180,7 +180,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
     <div class="stat"><span class="lbl">PRESSURE · LOSE AT 8</span><div class="meter" id="hMeter"></div></div>
     <div class="timer" id="hTimer" aria-live="off"></div>
   </div>
-  <a class="physbtn" href="timer.html">Have The Physical Copy?</a>
+  <a class="toplink" href="rulebook.pdf" target="_blank" rel="noopener">Rules (PDF)</a>
 </header>
 
 <main id="app">
