@@ -172,7 +172,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 
 <header class="top" id="top">
   <div class="brand">LAST CALL <small>PLAYTEST · ITERATION 5</small></div>
-  <nav class="tabs" aria-label="Playtest pages"><a href="./" aria-current="page">Online game</a><a href="timer.html">Physical copy</a></nav>
+  <nav class="tabs" aria-label="Playtest pages"><a href="./" aria-current="page">Online game</a><a href="timer.html">Physical copy</a><a href="credits.html">Credits</a></nav>
   <div class="spacer"></div>
   <div id="hud" hidden style="display:contents">
     <div class="stat"><span class="lbl">ROUND</span><b id="hRound">1/8</b></div>
@@ -199,7 +199,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
           <button class="btn ghost" id="btnJoin">Join</button>
         </div>
       </div>
-      <img src="img/board.webp?b=20261029-151000" alt="The Last Call board" width="1980" height="1400">
+      <img src="img/board.webp?b=20261030-100000" alt="The Last Call board" width="1980" height="1400">
     </div>
     <div id="tableBox" class="panel" hidden>
       <div class="phase"><span class="lbl">TABLE CODE</span><span class="code" id="tCode"></span><span class="note">Share this code with the other three players.</span><div class="spacer"></div><button class="btn small ghost" id="btnLeave">Leave table</button></div>
@@ -213,23 +213,23 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
   <section id="game" hidden>
     <div class="game">
       <div style="display:grid;gap:14px;min-width:0">
-        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261029-151000" alt="Board"></div>
+        <div class="boardwrap" id="board"><img class="bg" src="img/board.webp?b=20261030-100000" alt="Board"></div>
         <details class="rules">
           <summary>RULES REMINDER</summary>
           <div class="rulesgrid">
             <ul>
               <li><b>Plan</b> on rounds 1, 3, 5, 7. Round 1 has no timer. Rounds 3, 5, 7: <b>Talk</b> 60 seconds, then <b>Lock-in</b> 30 seconds with no talking. Place card A (this round) and card B (next round). When the timer ends, plans lock. <b>Played cards are discarded</b> – you play 8 of your 10 cards per night.</li>
-              <li><b>Bouncer – on the floor</b> (power): place card A only, or A and B. At the start of the even round you get 30 extra seconds to place card B or swap it.</li>
+              <li><b>Bouncer – on the floor</b> (power): place card A only, or A and B. At the start of the even round you get 30 extra seconds to place card B or swap it (no timer in Round 2).</li>
               <li><b>Check the Forecast</b>: the Manager sees the top 2 Night Events and picks one; the other goes to the bottom.</li>
-              <li><b>Customers</b>: 6 of 10 are dealt at random. Ride Home sends one home and the next customer takes the seat.</li>
+              <li><b>Customers</b>: 6 of 10 are dealt at random. Ride Home (−1 Pressure) sends one home and the next customer takes the seat – later cards on that seat hit the new customer.</li>
               <li><b>Act</b>: Bartender first, then Server, Bouncer, Manager. Odd rounds play A, even rounds play B.</li>
-              <li><b>Night Event</b>, then <b>last orders</b>: +1 Pressure per customer still at 4 (max +2).</li>
-              <li>Reaching 4: +1 Pressure. A drink that would go above 4 is wasted. Cocktail can't go to the First Date.</li>
+              <li><b>Night Event</b>, then <b>last orders</b>: <b>+1 Pressure every round</b> (the bar gets busier), plus +1 per customer still at 4 (max +2).</li>
+              <li>Reaching 4: +1 Pressure. A drink that would go above 4 is wasted. Cocktail can't go to the First Date. Wine no longer lowers Pressure.</li>
               <li><b>Pressure 5+</b> when a planning round starts: silent planning – skip Talk, do only the 30-second Lock-in with no talking.</li>
               <li><b>Pressure 8</b>: you lose. After Round 8: nobody may be at 4. Under <b>$26</b> you lose, <b>$26–27</b> the bar keeps going, <b>$28+</b> the bar becomes famous.</li>
               <li>Bartender, Server and Manager powers work once every 2 rounds and apply automatically. 8 of the 14 Night Events happen each night.</li>
             </ul>
-            <img src="img/drinkmenu.webp?b=20261029-151000" alt="Drink Menu reference card" width="315" height="440">
+            <img src="img/drinkmenu.webp?b=20261030-100000" alt="Drink Menu reference card" width="315" height="440">
           </div>
         </details>
       </div>
@@ -247,7 +247,7 @@ details.rules summary{cursor:pointer;font-family:var(--f-label);letter-spacing:.
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 <script>
-// ===== Last Call – Iteration 5 rules engine (pure, no DOM) =====
+// ===== Last Call – Iteration 6 rules engine (pure, no DOM) =====
 const ROLES = ['bar', 'ser', 'bou', 'man'];
 const ROLE_NAME = { bar: 'Bartender', ser: 'Server', bou: 'Bouncer', man: 'Manager' };
 const DECKS = {
@@ -263,9 +263,10 @@ const CUST = ['The Regular', 'Karaoke Star', 'First Date', 'Off-Duty Chef', 'Spo
 const C = { REG: 0, KAR: 1, DATE: 2, CHEF: 3, FAN: 4, TOUR: 5, LIGHT: 6, OWL: 7, SPEND: 8, DD: 9 };
 const EVENTS = ['argument', 'rush', 'drive', 'spilled', 'karaoke', 'inspection', 'trivia', 'tipper', 'celebrity', 'critic', 'quiet', 'bachelorette', 'surge', 'gamenight'];
 const EVENT_NAME = { argument: 'Argument', rush: 'Last Call Rush', drive: 'I Can Drive', spilled: 'Spilled Drinks', karaoke: 'Karaoke Encore', inspection: 'Surprise Inspection', trivia: 'Trivia Night', tipper: 'Big Tipper', celebrity: 'Celebrity Visit', critic: 'Food Critic', quiet: 'Quiet Night', bachelorette: 'Bachelorette Party', surge: 'Rideshare Surge', gamenight: 'Game Night Final' };
-// Iteration 5 timing: Round 1 untimed; Rounds 3/5/7 Talk 60 s then Lock-in 30 s; silent (Pressure 5+) = Lock-in only; Bouncer 30 s.
+// Iteration 6 timing: Round 1 untimed; Rounds 3/5/7 Talk 60 s then Lock-in 30 s; silent (Pressure 5+) = Lock-in only; Bouncer: Round 2 untimed, then 30 s.
 const TALK_SECONDS = 60, LOCK_SECONDS = 30, PLAN_SECONDS = { 1: 0, 3: TALK_SECONDS + LOCK_SECONDS, 5: TALK_SECONDS + LOCK_SECONDS, 7: TALK_SECONDS + LOCK_SECONDS }, SILENT_SECONDS = LOCK_SECONDS, BOUNCER_SECONDS = 30;
 const GOAL = 26, FAMOUS = 28, LOSE_AT = 8, SKIP_AT = 5, ROUNDS = 8;
+const ROUND_PRESSURE = 1, RIDE_RELIEF = 1; // Iteration 6: +1 Pressure every round end; Ride Home −1 Pressure
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function shuffle(a, rng) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -276,7 +277,7 @@ function remaining(s, role) { const out = {}; for (const [c, n] of Object.entrie
 function newGame(code, createdBy, rng = Math.random) {
   const pool = shuffle(CUST.map((_, i) => i), rng);
   return {
-    v: 5, gid: Math.floor(rng() * 1e9).toString(36), code, createdBy, phase: 'plan', round: 1, cycle: 1, step: 1,
+    v: 6, gid: Math.floor(rng() * 1e9).toString(36), code, createdBy, phase: 'plan', round: 1, cycle: 1, step: 1,
     P: 0, rev: 0, rides: 0, cust: pool.slice(0, 6).map(id => ({ id, ix: 0, dr: 0 })), pool: pool.slice(6),
     deck: shuffle(EVENTS.slice(), rng), evIdx: 0, powers: { bar: false, ser: false, man: false },
     used: { bar: {}, ser: {}, bou: {}, man: {} },
@@ -317,7 +318,7 @@ function act(s, role, card, t, rnd) {
       if (role === 'bar' && !s.powers.bar) { s.powers.bar = true; notes.push('Bartender power: no Pressure from this Cocktail'); }
       else addP(s, 1, notes, 'Cocktail');
     }
-    if (card === 'wine' && old <= 1) addP(s, -1, notes, 'Wine for a calm guest');
+    // Iteration 6: Wine no longer lowers Pressure.
     c.dr += 1;
     if (c.id === C.FAN && c.dr === 3) addP(s, 1, notes, "Sports Fan's 3rd drink");
     rnd.alc++; rnd.drinks++;
@@ -343,10 +344,11 @@ function act(s, role, card, t, rnd) {
   if (card === 'ride') {
     const need = c.id === C.TOUR ? 3 : 2;
     if (c.ix < need) return { ok: false, text: `Ride Home → ${who}: needs Intoxication ${need}+ (now ${c.ix}) – wasted.` };
-    let n = 2; const extra = [];
+    let n = RIDE_RELIEF; const extra = [];
     if (role === 'man' && !s.powers.man) { s.powers.man = true; n = 3; extra.push('Manager power −1'); }
     const old = s.P; s.P = Math.max(0, s.P - n); s.rides++; rnd.ride = true;
-    const gone = c.id; s.pool.push(gone); s.lastSent = gone; const nid = s.pool.shift(); s.cust[t] = { id: nid, ix: 0, dr: 0 };
+    // Draw first, then the leaving customer joins Sent Home – so they never come straight back (Iteration 6 empty-pile rule).
+    const gone = c.id; const nid = s.pool.shift(); s.pool.push(gone); s.lastSent = gone; s.cust[t] = { id: nid, ix: 0, dr: 0 };
     return { ok: true, text: `Ride Home → ${who}: home safe. ${CUST[nid]} takes the seat. Pressure ${old}→${s.P}${extra.length ? ' (' + extra[0] + ')' : ''}.` };
   }
   if (card === 'cover') {
@@ -453,10 +455,12 @@ function finishRound(s) {
     event = { key: e, text: `${parts.length ? parts.join(', ') + ' – ' : ''}${eff.why || 'nothing happens'}.` + (fcInfo ? ` (Manager chose this over ${EVENT_NAME[fcInfo.bottom]}.)` : '') };
     if (s.P < LOSE_AT) {
       const extra = [];
+      s.P += ROUND_PRESSURE; extra.push(`+${ROUND_PRESSURE} Pressure – the bar gets busier`);
       if (rnd.happy) { s.P += 1; extra.push('+1 Pressure – Happy Hour'); }
       const n4 = s.cust.filter(c => c.ix === 4).length; const add = Math.min(2, n4);
       s.P += add;
-      lastOrders = (add ? `+${add} Pressure – ${n4} customer${n4 === 1 ? '' : 's'} still at 4.` : 'Nobody at 4. No Pressure.') + (extra.length ? ' ' + extra.join('; ') + '.' : '');
+      lastOrders = extra.concat([add ? `+${add} Pressure – ${n4} customer${n4 === 1 ? '' : 's'} still at 4` : 'nobody at 4']).join('; ') + '.';
+      lastOrders = lastOrders[0].toUpperCase() + lastOrders.slice(1);
     }
   }
   if (s.P >= LOSE_AT) s.result = { win: false, reason: `Pressure reached ${LOSE_AT} in Round ${s.round}. The bar is shut down.` };
@@ -479,7 +483,7 @@ function nextRound(S, now) {
   let s = clone(S);
   if (s.result) { s.phase = 'end'; s.step++; return s; }
   s.round += 1;
-  if (s.round % 2 === 0) { s.phase = 'bplan'; s.planEndsAt = now + BOUNCER_SECONDS * 1000; s.step++; return s; }
+  if (s.round % 2 === 0) { s.phase = 'bplan'; s.planEndsAt = s.round === 2 ? 0 : now + BOUNCER_SECONDS * 1000; s.step++; return s; } // Round 2: no timer
   s.cycle += 1; s.powers = { bar: false, ser: false, man: false };
   s.silent = s.P >= SKIP_AT; // Pressure 5+: silent planning – no talking, 30 seconds
   s.plans = null; s.phase = 'plan'; s.planEndsAt = now + (s.silent ? SILENT_SECONDS : PLAN_SECONDS[s.round]) * 1000; s.step++;
@@ -560,7 +564,7 @@ function status(msg, warn) { const s = $('lobbyStatus'); s.innerHTML = warn ? `<
 function myName() { return ($('myName').value || '').trim().slice(0, 24); }
 function newCode() { return Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); }
 
-const BUILD = '20261029-151000';
+const BUILD = '20261030-100000';
 // If the browser served an old cached copy, fetch the live page and reload once when it is newer.
 async function freshnessCheck() {
   try {
@@ -687,7 +691,7 @@ $('btnStart').onclick = () => transition(state.step, 'start');
 
 function tryLock() {
   if (!isHost || !state) return;
-  if (state.phase === 'bplan') { if (!(fresh(plans.bou) && plans.bou.ready) && Date.now() < state.planEndsAt + 300) return; transition(state.step, 'lockB'); return; }
+  if (state.phase === 'bplan') { if (!(fresh(plans.bou) && plans.bou.ready) && (!state.planEndsAt || Date.now() < state.planEndsAt + 300)) return; transition(state.step, 'lockB'); return; }
   if (state.phase !== 'plan') return;
   const all = ROLES.every(r => fresh(plans[r]) && plans[r].ready);
   if (!all && (!state.planEndsAt || Date.now() < state.planEndsAt + 300)) return; // Round 1 (no timer): wait for all four
@@ -765,7 +769,7 @@ function renderHud() {
 }
 function tick() {
   const t = $('hTimer');
-  if (state && state.phase === 'plan' && !state.planEndsAt) { t.textContent = 'NO TIMER'; t.className = 'timer'; t.style.fontSize = '16px'; }
+  if (state && (state.phase === 'plan' || state.phase === 'bplan') && !state.planEndsAt) { t.textContent = 'NO TIMER'; t.className = 'timer'; t.style.fontSize = '16px'; }
   else if (state && (state.phase === 'plan' || state.phase === 'bplan')) {
     t.style.fontSize = '';
     let s = Math.max(0, Math.ceil((state.planEndsAt - Date.now()) / 1000)), tag = '';
@@ -835,7 +839,7 @@ function renderPhase() {
   } else if (state.phase === 'bplan') {
     const ready = fresh(plans.bou) && plans.bou.ready;
     p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Bouncer on the floor</h2><span class="pill ${ready ? 'go' : 'wait'}">${ready ? 'READY' : 'CHOOSING'}</span>`));
-    p.appendChild(el('div', 'note', `Everyone else's card B is locked. On the Floor: the Bouncer has 30 extra seconds to place card B or swap the one they placed. Round ${state.round} plays when they're ready or the timer ends.`));
+    p.appendChild(el('div', 'note', `Everyone else's card B is locked. On the Floor: the Bouncer places card B or swaps the one they placed${state.planEndsAt ? ' – 30 seconds' : ' – no timer in Round 2'}. Round ${state.round} plays when they're ready${state.planEndsAt ? ' or the timer ends' : ''}.`));
   } else if (state.phase === 'forecast') {
     p.appendChild(el('div', 'phase', `<h2>Round ${state.round} · Check the Forecast</h2><span class="pill wait">MANAGER PICKS</span>`));
     const isMan = myRoles().includes('man');

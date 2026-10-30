@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700&family=Work+Sans:wght@500;600;700&display=swap">
 <style>
-/* Physical copy companion (Iteration 5 timing). Round 1: no timer. Rounds 3/5/7: Talk 60 s → Lock-in 30 s (silent at Pressure 5+: Lock-in only). Rounds 2/4/6/8: Bouncer's 30 s to place or swap card B. */
+/* Physical copy companion (Iteration 6 timing). Round 1: no timer. Rounds 3/5/7: Talk 60 s → Lock-in 30 s (silent at Pressure 5+: Lock-in only). Round 2: Bouncer untimed; Rounds 4/6/8: Bouncer's 30 s to place or swap card B. */
 :root{
   --night:#1b2033; --panel:#252d45; --line:#3d4868; --ink:#2a2433; --muted:#a9b0c6; --text:#f3eee4;
   --gold:#f2c14e; --red:#e2574c;
@@ -61,7 +61,7 @@ main{max-width:560px;margin:0 auto;padding-top:clamp(24px,6vh,64px);display:grid
 <body>
 <header class="top">
   <div class="brand">LAST CALL</div>
-  <nav class="tabs" aria-label="Playtest pages"><a href="./">Online game</a><a href="timer.html" aria-current="page">Physical copy</a></nav>
+  <nav class="tabs" aria-label="Playtest pages"><a href="./">Online game</a><a href="timer.html" aria-current="page">Physical copy</a><a href="credits.html">Credits</a></nav>
   <div class="spacer"></div>
   <a class="toplink" href="rulebook.pdf" target="_blank" rel="noopener">Rules (PDF)</a>
 </header>
@@ -80,13 +80,14 @@ main{max-width:560px;margin:0 auto;padding-top:clamp(24px,6vh,64px);display:grid
   const $ = id => document.getElementById(id);
   const get = (k, d) => { try { const v = localStorage.getItem('lcs_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
   const put = (k, v) => { try { localStorage.setItem('lcs_' + k, JSON.stringify(v)); } catch (e) {} };
-  // Iteration 5 timing
+  // Iteration 6 timing
   const TALK = { key: 'talk', tag: 'Talk', name: 'Talk – 60 seconds', secs: 60, hint: 'Discuss the plan with your cards in hand. Nothing is placed or written yet.', end: 'Lock-in!' };
   const LOCK = { key: 'lock', tag: 'Lock-in', name: 'Lock-in – 30 seconds', secs: 30, hint: 'No more talking. Place card A and card B and write the seat numbers.', end: 'Plans locked!' };
   const SILENT = { key: 'lock', tag: 'Silent lock-in', name: 'Silent lock-in – 30 seconds', secs: 30, hint: 'Pressure is 5 or more: no talking, pointing or signalling. Place cards A and B and write seats.', end: 'Plans locked!' };
   const BOUNCER = { key: 'bou', tag: 'Bouncer', name: 'Bouncer: card B – 30 seconds', secs: 30, hint: 'On the Floor: after seeing what card A and the Night Event did, the Bouncer places card B or swaps the one they placed. Happy with it? Skip to the next round.', end: 'Bouncer locked!' };
   const TEACH = { key: 'teach', tag: 'Teaching', name: 'Teaching round – no timer', secs: 0, hint: 'Talk through the plan together and take as long as you need. Place card A and card B (the Bouncer may place only A).' };
-  const stepsFor = (r, silent) => r === 1 ? [TEACH] : r % 2 === 0 ? [BOUNCER] : silent ? [SILENT] : [TALK, LOCK];
+  const BOUNCER2 = { key: 'bou', tag: 'Bouncer', name: 'Bouncer: card B – no timer', secs: 0, hint: 'Round 2 is still part of teaching: the Bouncer places card B or swaps it, taking as long as needed.' };
+  const stepsFor = (r, silent) => r === 1 ? [TEACH] : r === 2 ? [BOUNCER2] : r % 2 === 0 ? [BOUNCER] : silent ? [SILENT] : [TALK, LOCK];
 
   let round = get('round', 1), silent = false, idx = 0, left = 0, running = false, endAt = 0, tickH = null, ringH = null, ac = null, lock = null;
   const cur = () => stepsFor(round, silent)[idx];

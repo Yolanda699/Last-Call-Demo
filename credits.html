@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Last Call Credits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Josefin+Sans:wght@600;700&family=Work+Sans:wght@500;600;700&display=swap">
+<style>
+/* Closing credits, served as the bar's last menu of the night. */
+:root{
+  --night:#1b2033; --panel:#252d45; --line:#3d4868; --ink:#2a2433; --muted:#a9b0c6; --text:#f3eee4;
+  --cream:#f7f1e6; --paper-line:#d9ccb4; --ink-soft:#6e6676;
+  --gold:#f2c14e; --r-bar:#e2574c; --r-ser:#2fa59a; --r-bou:#e8a83a; --r-man:#5c6bc0;
+  --f-display:'Josefin Sans',system-ui,sans-serif; --f-body:'Work Sans',system-ui,sans-serif; --f-label:'Bebas Neue','Arial Narrow',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;color:var(--text)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.45;padding:0 max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));
+  background:radial-gradient(1200px 600px at 50% -10%,#2b3352 0%,var(--night) 60%) fixed,var(--night)}
+a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:10px 0;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-size:22px;letter-spacing:.04em;color:var(--gold)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel);padding:3px;border-radius:10px}
+.tabs a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px}
+.tabs a[aria-current]{background:var(--gold);color:var(--ink)}
+
+main{max-width:760px;margin:0 auto;padding-top:clamp(28px,6vh,64px);display:grid;gap:clamp(28px,5vh,48px)}
+
+/* neon sign */
+.sign{text-align:center;display:grid;gap:10px}
+.sign .kicker{font-family:var(--f-label);letter-spacing:.32em;font-size:clamp(15px,3.6vw,19px);color:var(--muted)}
+.neon{font-family:var(--f-display);font-weight:700;margin:0;font-size:clamp(56px,15vw,112px);line-height:.9;letter-spacing:.02em;color:#fff5d6;
+  text-shadow:0 0 6px rgba(242,193,78,.9),0 0 18px rgba(242,193,78,.6),0 0 42px rgba(226,87,76,.45)}
+.neon .flick{animation:flicker 6s infinite steps(1)}
+@keyframes flicker{0%,100%{opacity:1}41%{opacity:1}42%{opacity:.35}43%{opacity:1}44%{opacity:.5}45%{opacity:1}}
+.sign .sub{color:var(--muted);font-size:17px;margin:0}
+
+/* card backs fan */
+.fan{display:flex;justify-content:center;height:clamp(110px,24vw,150px);margin-top:4px}
+.fan img{width:clamp(70px,16vw,96px);aspect-ratio:315/440;height:auto;border-radius:8px;box-shadow:0 10px 24px rgba(0,0,0,.45);margin:0 clamp(-18px,-3vw,-10px);transform-origin:50% 120%}
+.fan img:nth-child(1){transform:rotate(-15deg)}
+.fan img:nth-child(2){transform:rotate(-5deg) translateY(-6px)}
+.fan img:nth-child(3){transform:rotate(5deg) translateY(-6px)}
+.fan img:nth-child(4){transform:rotate(15deg)}
+
+/* the menu card */
+.menu{background:var(--cream);color:var(--ink);border-radius:18px;padding:clamp(22px,5vw,44px) clamp(18px,5vw,52px);position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.04)}
+.menu::before{content:"";position:absolute;inset:10px;border:1.5px solid var(--paper-line);border-radius:12px;pointer-events:none}
+.menu h2{font-family:var(--f-label);font-weight:400;text-align:center;letter-spacing:.28em;font-size:clamp(22px,5vw,30px);margin:0 0 6px;color:var(--ink)}
+.menu .note{text-align:center;color:var(--ink-soft);font-size:14px;margin:0 0 clamp(18px,4vw,28px)}
+.row{display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:10px;padding:12px 0;border-top:1px dashed var(--paper-line);
+  opacity:0;animation:pour .6s ease forwards}
+.row:first-of-type{border-top:0}
+.role{font-family:var(--f-label);letter-spacing:.14em;font-size:clamp(18px,4.2vw,22px);color:var(--ink);display:flex;align-items:center;gap:10px;white-space:nowrap}
+.role .dot{width:10px;height:10px;border-radius:50%;flex:none;transform:rotate(45deg);border-radius:2px}
+.lead{border-bottom:2px dotted #c4b69c;transform:translateY(-6px);min-width:16px}
+.names{font-family:var(--f-display);font-weight:600;font-size:clamp(17px,3.8vw,21px);text-align:right;display:grid;gap:2px}
+@keyframes pour{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.closing{text-align:center;color:var(--muted);display:grid;gap:6px}
+.closing .big{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,5vw,28px);color:var(--text);margin:0}
+.closing p{margin:0}
+
+@media (max-width:520px){
+  .row{grid-template-columns:1fr;gap:4px}
+  .lead{display:none}
+  .names{text-align:left;padding-left:20px}
+}
+@media (prefers-reduced-motion:reduce){.neon .flick,.row{animation:none;opacity:1}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">LAST CALL</div>
+  <nav class="tabs" aria-label="Site pages"><a href="./">Online game</a><a href="timer.html">Physical copy</a><a href="credits.html" aria-current="page">Credits</a></nav>
+</header>
+<main>
+  <section class="sign" aria-labelledby="t">
+    <div class="kicker">A COOPERATIVE BAR GAME</div>
+    <h1 class="neon" id="t">LAST <span class="flick">C</span>ALL</h1>
+    <p class="sub">The crew who kept the bar running</p>
+    <div class="fan" aria-hidden="true">
+      <img src="img/back_bar.webp" alt=""><img src="img/back_ser.webp" alt=""><img src="img/back_bou.webp" alt=""><img src="img/back_man.webp" alt="">
+    </div>
+  </section>
+
+  <section class="menu" aria-labelledby="m">
+    <h2 id="m">TONIGHT’S MENU</h2>
+    <p class="note">House specials, poured by the team</p>
+    <div class="row" style="animation-delay:.05s"><span class="role"><span class="dot" style="background:var(--r-bar)"></span>PRODUCER</span><span class="lead"></span><span class="names"><span>Erica Lin</span></span></div>
+    <div class="row" style="animation-delay:.15s"><span class="role"><span class="dot" style="background:var(--gold)"></span>DESIGNERS</span><span class="lead"></span><span class="names"><span>Ryan Ontiveros</span><span>Yolanda Liu</span><span>Luna Lin</span><span>Erica Lin</span></span></div>
+    <div class="row" style="animation-delay:.25s"><span class="role"><span class="dot" style="background:var(--r-man)"></span>ARTIST</span><span class="lead"></span><span class="names"><span>Yolanda Liu</span></span></div>
+    <div class="row" style="animation-delay:.35s"><span class="role"><span class="dot" style="background:var(--r-ser)"></span>QA</span><span class="lead"></span><span class="names"><span>Luna Lin</span></span></div>
+    <div class="row" style="animation-delay:.45s"><span class="role"><span class="dot" style="background:var(--r-bou)"></span>NARRATIVE</span><span class="lead"></span><span class="names"><span>Ryan Ontiveros</span></span></div>
+    <div class="row" style="animation-delay:.55s"><span class="role"><span class="dot" style="background:var(--r-man)"></span>WEB ENGINEER</span><span class="lead"></span><span class="names"><span>Yolanda Liu</span></span></div>
+  </section>
+
+  <section class="closing">
+    <p class="big">Thanks for playing.</p>
+    <p>Last orders are in – get home safe.</p>
+  </section>
+</main>
+</body>
+</html>
